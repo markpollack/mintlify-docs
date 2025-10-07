@@ -1,0 +1,78 @@
+---
+title: "Spring AI Vaadin"
+description: "Vaadin UIs for Spring AI chat and RAG applications"
+---
+
+<img src="https://img.shields.io/badge/Status-Incubating-blue" />
+
+## Overview
+
+Spring AI Vaadin provides rich user interface components for building AI-powered chat applications using Vaadin and Spring AI. This project demonstrates how to create interactive AI experiences in Spring Boot applications with modern Java UI components.
+
+## Key Features
+
+<CardGroup cols={3}>
+  <Card title="AI Chat Interface" icon="comments">
+    Interactive chat UI with file upload support for attachments
+  </Card>
+  <Card title="RAG Support" icon="file-arrow-up">
+    Upload and analyze documents to provide context for AI queries
+  </Card>
+  <Card title="MCP Integration" icon="plug">
+    Optional Model Context Protocol integration for enhanced capabilities
+  </Card>
+</CardGroup>
+
+## Technologies
+
+- **Vaadin** - Rich Java UI components
+- **Spring Boot** - Application framework
+- **Spring AI** - AI integration
+- **RAG** - Document retrieval and context
+
+## Getting Started
+
+### Prerequisites
+
+- Java 21 or higher
+- OpenAI API key
+
+### Quick Start
+
+```bash
+export OPENAI_API_KEY=your-api-key
+./mvnw spring-boot:run
+```
+
+The application will be available at http://localhost:8080.
+
+## Using RAG
+
+<Steps>
+  <Step title="Open Settings">
+    Click the gear icon to open the settings panel
+  </Step>
+  <Step title="Upload Documents">
+    Upload relevant documents (PDF, DOCX, TXT, etc.)
+  </Step>
+  <Step title="Ask Questions">
+    Ask questions related to the uploaded content for contextual AI responses
+  </Step>
+</Steps>
+
+## Alternative Frontend
+
+<Note>
+A React-based frontend using Vaadin [Hilla](https://vaadin.com/docs/latest/hilla/faq) is available on the `hilla` branch.
+
+When switching branches, delete the `src/main/frontend/generated` directory to avoid startup issues.
+</Note>
+
+## Resources
+
+- [GitHub Repository](https://github.com/spring-ai-community/spring-ai-vaadin)
+- [Vaadin Documentation](https://vaadin.com/docs)
+
+## Maintainer
+
+Led by [tomivirkki](https://github.com/tomivirkki)

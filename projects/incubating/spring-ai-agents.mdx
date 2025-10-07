@@ -10,31 +10,129 @@ description: "Autonomous CLI agent integrations for the Spring AI ecosystem"
 
 ## Overview
 
-Spring AI Agents provides autonomous CLI agent integrations for the Spring AI ecosystem. This project brings Claude Code, Gemini CLI, and SWE-bench agents to Spring applications as first-class citizens with Spring Boot auto-configuration support and secure sandbox isolation.
+**What ChatClient did for completion endpoints, AgentClient does for Agent CLIs.**
+
+Spring AI Agents provides a unified framework for autonomous agents with **Goals** (clear objectives), **Tools** (actions agents can take), **Context** (information for decisions), **Judges** (automated verification), and **Sandboxes** (isolated execution). This project brings multiple AI agent platforms to Spring applications as first-class citizens with Spring Boot auto-configuration.
+
+Currently supported: **[Claude Code](https://www.anthropic.com/claude/code)**, **[Gemini](https://ai.google.dev/gemini-api)**, **[Amazon Q](https://aws.amazon.com/q/developer/)**, **[Amp](https://www.amp.ai/)**, and **[Codex](https://openai.com/index/openai-codex/)**. Coming soon: **[Goose](https://github.com/square/goose)**, **[Aider](https://aider.chat/)**, **[OpenHands](https://www.all-hands.dev/)**, and **[GitHub Copilot CLI](https://github.com/features/copilot/cli)**.
+
+<img src="/images/projects/spring-ai-agents-workflow.png" alt="Agent Execution Workflow" />
 
 <Note>
 **Version**: 0.1.0-SNAPSHOT
 Maven snapshot artifacts are available from [Maven Central Snapshots](https://central.sonatype.com/repository/maven-snapshots/org/springaicommunity/agents/)
 </Note>
 
-## Key Features
+## Agent SDKs
 
-Transform autonomous CLI agents into pluggable Spring components:
+Spring AI Agents provides Agent SDKs for multiple platforms with Spring Boot auto-configuration:
 
-<CardGroup cols={2}>
-  <Card title="Claude Code CLI" icon="robot">
-    Production-ready code assistance and autonomous development tasks
+<CardGroup cols={3}>
+  <Card
+    title="Claude Agent SDK"
+    icon="robot"
+    href="https://spring-ai-community.github.io/spring-ai-agents/api/claude-code-sdk.html"
+  >
+    <img src="/images/agents/claude-code-logo.png" alt="Claude Code" style={{width: '60px', marginBottom: '0.5rem'}} />
+
+    Anthropic's Claude Code agent
   </Card>
-  <Card title="Gemini CLI" icon="sparkles">
-    Google's Gemini models through command-line interface
+  <Card
+    title="Gemini Agent SDK"
+    icon="sparkles"
+    href="https://spring-ai-community.github.io/spring-ai-agents/api/gemini-cli-sdk.html"
+  >
+    <img src="/images/agents/gemini-logo.png" alt="Gemini" style={{width: '60px', marginBottom: '0.5rem'}} />
+
+    Google's Gemini CLI agent
   </Card>
-  <Card title="SWE-bench Agent" icon="chart-bar">
-    Software engineering benchmarking and evaluation
+  <Card
+    title="Amazon Q Agent SDK"
+    icon="aws"
+    href="https://spring-ai-community.github.io/spring-ai-agents/api/amazon-q-cli-sdk.html"
+  >
+    <img src="/images/agents/amazon-q-logo.png" alt="Amazon Q" style={{width: '60px', marginBottom: '0.5rem'}} />
+
+    AWS's AI development agent
   </Card>
-  <Card title="Secure Sandbox" icon="shield">
-    Docker container isolation with local fallback
+  <Card
+    title="Amp Agent SDK"
+    icon="wand-magic"
+    href="https://spring-ai-community.github.io/spring-ai-agents/api/amp-cli-sdk.html"
+  >
+    <img src="/images/agents/amp-logo.png" alt="Amp" style={{width: '60px', marginBottom: '0.5rem'}} />
+
+    Amp AI agent platform
+  </Card>
+  <Card
+    title="Codex Agent SDK"
+    icon="code"
+    href="https://spring-ai-community.github.io/spring-ai-agents/api/codex-cli-sdk.html"
+  >
+    <img src="/images/agents/codex-logo.png" alt="Codex" style={{width: '60px', marginBottom: '0.5rem'}} />
+
+    OpenAI's Codex agent
+  </Card>
+  <Card
+    title="Custom Agent SDK"
+    icon="puzzle-piece"
+    href="https://spring-ai-community.github.io/spring-ai-agents/api/agentclient.html"
+  >
+    Bring your own agent
   </Card>
 </CardGroup>
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card
+    title="Spring Boot Auto-Configuration"
+    icon="leaf"
+    href="https://spring-ai-community.github.io/spring-ai-agents/getting-started/autoconfiguration.html"
+  >
+    Automatic agent discovery and configuration with Spring Boot starters
+  </Card>
+  <Card
+    title="Secure Sandbox Isolation"
+    icon="shield"
+    href="https://spring-ai-community.github.io/spring-ai-agents/getting-started/goals-and-workspaces.html"
+  >
+    Docker container isolation with local fallback for safe agent execution
+  </Card>
+  <Card
+    title="Unified AgentClient API"
+    icon="code"
+    href="https://spring-ai-community.github.io/spring-ai-agents/api/agentclient.html"
+  >
+    Consistent interface across all agent providers
+  </Card>
+  <Card
+    title="CLI Discovery"
+    icon="magnifying-glass"
+    href="https://spring-ai-community.github.io/spring-ai-agents/concepts/cli-agents.html"
+  >
+    Automatic detection of installed CLI tools
+  </Card>
+</CardGroup>
+
+## Agent Roadmap
+
+<AccordionGroup>
+  <Accordion title="✅ Currently Supported">
+    - **Claude Code** - Anthropic's autonomous coding assistant
+    - **Gemini** - Google's AI development platform
+    - **Amazon Q** - AWS's enterprise AI assistant
+    - **Amp** - AI agent platform
+    - **Codex** - OpenAI's code generation model
+  </Accordion>
+
+  <Accordion title="🚧 Coming Soon">
+    - **[Goose](https://github.com/square/goose)** - Square's AI agent framework
+    - **[Aider](https://aider.chat/)** - AI pair programming in your terminal ([GitHub](https://github.com/paul-gauthier/aider))
+    - **[OpenHands](https://www.all-hands.dev/)** - Open-source AI software engineer ([GitHub](https://github.com/All-Hands-AI/OpenHands))
+    - **[GitHub Copilot CLI](https://github.com/features/copilot/cli)** - GitHub's command-line AI assistant
+  </Accordion>
+</AccordionGroup>
 
 ## Highlighted Achievement
 
@@ -47,6 +145,10 @@ An autonomous agent that increased test coverage from **0% to 71.4%** on Spring'
 </Check>
 
 > Model quality matters: Same coverage, different code quality. Claude generated production-ready tests while Gemini used slower patterns (@SpringBootTest).
+
+<Note>
+**Learn More**: See the [Code Coverage Agent Guide](https://spring-ai-community.github.io/spring-ai-agents/getting-started/code-coverage-agent.html) for detailed implementation and results.
+</Note>
 
 ## Quick Start
 
@@ -99,6 +201,51 @@ AgentClientResponse response = agentClient
     .run();
 ```
 
+## AgentClient Architecture
+
+The unified AgentClient API provides a consistent interface across all agent providers:
+
+<img src="/images/projects/agentclient-architecture.png" alt="AgentClient Architecture" />
+
+## Core Domain Model
+
+In Spring AI Agents, we model agents around these components:
+
+<CardGroup cols={2}>
+  <Card title="Goals 🎯" icon="bullseye">
+    Clear objectives that guide agent execution
+  </Card>
+  <Card title="Tools 🔧" icon="wrench">
+    Actions the agent can take (call APIs, run commands, read files)
+  </Card>
+  <Card title="Context 📊" icon="database">
+    Information the agent needs to make decisions
+  </Card>
+  <Card
+    title="Judges ⚖️"
+    icon="gavel"
+    href="https://spring-ai-community.github.io/spring-ai-agents/judges/index.html"
+  >
+    Verification that the goal was achieved
+  </Card>
+</CardGroup>
+
+**Example:**
+
+```java
+CoverageJudge judge = new CoverageJudge(80.0);
+
+AgentClientResponse response = agentClient
+    .goal("Increase JaCoCo test coverage to 80%")
+    .workingDirectory(projectRoot)
+    .advisors(JudgeAdvisor.builder().judge(judge).build())
+    .run();
+```
+
+**Sandboxes** provide isolated execution environments (Docker or local processes) for safe agent operations. **Judges** verify that goals were achieved - from simple file checks to LLM-powered validation.
+
+Learn more: [Sandboxes](https://spring-ai-community.github.io/spring-ai-agents/getting-started/goals-and-workspaces.html) • [Judges](https://spring-ai-community.github.io/spring-ai-agents/judges/index.html)
+
 ## Agent Advisors
 
 Spring AI Agents implements the same advisor pattern as Spring AI's ChatClient:
@@ -127,26 +274,6 @@ public class WorkspaceContextAdvisor implements AgentCallAdvisor {
 - Evaluation/Judges (test running, file verification)
 - Security (goal validation, operation blocking)
 - Observability (metrics, logging, performance)
-
-## Production Ready
-
-<AccordionGroup>
-  <Accordion title="Resilience">
-    Circuit breakers, retries, timeouts, and comprehensive error handling
-  </Accordion>
-  <Accordion title="Security">
-    Docker container isolation with automatic fallback to local execution
-  </Accordion>
-  <Accordion title="Spring Boot Integration">
-    Auto-configuration, externalized configuration, and actuator support
-  </Accordion>
-  <Accordion title="Observability">
-    Micrometer metrics and structured logging
-  </Accordion>
-  <Accordion title="Type Safety">
-    Full Java type safety with comprehensive JavaDoc
-  </Accordion>
-</AccordionGroup>
 
 ## Resources
 

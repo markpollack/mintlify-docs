@@ -3,16 +3,17 @@ title: "Spring AI Bench"
 description: "Open benchmarking suite for Java-centric AI developer agents"
 ---
 
-<img
-  src="https://img.shields.io/badge/Status-Incubating-blue"
-  alt="Incubating Status"
-/>
+<img src="https://img.shields.io/badge/Status-Incubating-blue" />
+
+[GitHub](https://github.com/spring-ai-community/spring-ai-bench) • [Docs](https://spring-ai-community.github.io/spring-ai-bench/) • [Maven](https://central.sonatype.com/artifact/org.springaicommunity.bench/bench-core)
 
 ## Overview
 
 Spring AI Bench measures modern agents on real enterprise development tasks — issue triage, PR review, coverage uplift, compliance validation, dependency upgrades. Run benchmarks on YOUR repos to measure YOUR scenarios.
 
 **If agents have evolved, benchmarks must evolve too.**
+
+<img src="/images/projects/spring-ai-bench-diagram.png" alt="Spring AI Bench Benchmarking" />
 
 <Warning>
 Existing benchmarks (SWE-bench) measure yesterday's agents on static 2023 Python patches. They can't evaluate the agents teams actually use (Claude, Gemini, Amazon Q, Amp) on enterprise Java workflows.
@@ -25,7 +26,7 @@ Existing benchmarks (SWE-bench) measure yesterday's agents on static 2023 Python
     Beyond patch loops: triage, PR review, coverage, compliance
   </Card>
   <Card title="Java-First" icon="mug-hot">
-    Addresses 7-10% training bias gap in Python-centric benchmarks
+    Agents show dismal 7-10% lower results on Java - we need better benchmarks
   </Card>
   <Card title="Any Agent" icon="wand-magic-sparkles">
     Claude, Gemini, Amazon Q, Amp, custom — not just one architecture
@@ -95,31 +96,52 @@ open file:///tmp/bench-reports/index.html
 
 ## Current Implementation
 
-### Available Agents
+### Supported Agent Providers
 
-<Tabs>
-  <Tab title="hello-world">
-    Deterministic mock agent for testing infrastructure (115 ms)
-  </Tab>
-  <Tab title="hello-world-ai (Gemini)">
-    AI-powered agent via Spring AI Agents (5.3 seconds)
-  </Tab>
-  <Tab title="hello-world-ai (Claude)">
-    Thorough, detailed analysis (99 seconds)
-  </Tab>
-</Tabs>
+Spring AI Bench integrates with multiple AI agent providers through the Spring AI Agents framework:
 
-All implementations successfully completed the hello-world file creation task with **100% accuracy**.
+<CardGroup cols={3}>
+  <Card title="Claude Code" icon="robot">
+    <img src="/images/agents/claude-code-logo.png" alt="Claude Code" style={{width: '60px', marginBottom: '0.5rem'}} />
+
+    Anthropic's Claude via CLI integration
+  </Card>
+  <Card title="Gemini" icon="sparkles">
+    <img src="/images/agents/gemini-logo.png" alt="Gemini" style={{width: '60px', marginBottom: '0.5rem'}} />
+
+    Google's Gemini models
+  </Card>
+  <Card title="Amazon Q" icon="aws">
+    <img src="/images/agents/amazon-q-logo.png" alt="Amazon Q" style={{width: '60px', marginBottom: '0.5rem'}} />
+
+    AWS's AI development assistant
+  </Card>
+  <Card title="Amp" icon="wand-magic">
+    <img src="/images/agents/amp-logo.png" alt="Amp" style={{width: '60px', marginBottom: '0.5rem'}} />
+
+    Amp AI agent platform
+  </Card>
+  <Card title="Codex" icon="code">
+    <img src="/images/agents/codex-logo.png" alt="Codex" style={{width: '60px', marginBottom: '0.5rem'}} />
+
+    OpenAI Codex integration
+  </Card>
+  <Card title="Custom Agents" icon="puzzle-piece">
+    Bring your own agent implementation
+  </Card>
+</CardGroup>
+
+All agent providers support the same benchmark specifications, enabling fair comparisons across different AI models and platforms.
 
 ### Benchmark Tracks
 
 <AccordionGroup>
-  <Accordion title="✅ Available Now">
+  <Accordion title="✅ Production Ready">
     - **hello-world**: File creation and basic infrastructure validation
+    - **Code Coverage Uplift**: Autonomous test generation achieving 71.4% coverage on Spring tutorials
   </Accordion>
 
   <Accordion title="🚧 In Active Development">
-    - **Test Coverage Uplift**: Generate tests to achieve specific coverage thresholds
     - **Issue Analysis & Labeling**: Automated issue triage and classification
     - **Pull Request Review**: Comprehensive PR analysis with structured reports
     - **Static Analysis Remediation**: Fix code quality issues while preserving functionality
@@ -135,6 +157,28 @@ All implementations successfully completed the hello-world file creation task wi
     - Documentation Generation
   </Accordion>
 </AccordionGroup>
+
+## Code Coverage Achievement
+
+One of the most impressive demonstrations of Spring AI Bench is the **autonomous code coverage agent** that increased test coverage from **0% to 71.4%** on Spring's official [gs-rest-service](https://spring.io/guides/gs/rest-service) tutorial.
+
+<CardGroup cols={2}>
+  <Card title="Coverage Results" icon="chart-line">
+    - **Starting Coverage**: 0%
+    - **Final Coverage**: 71.4%
+    - **Tests Generated**: Complete test suite
+    - **Build Status**: ✅ All tests passing
+  </Card>
+  <Card title="Code Quality" icon="star">
+    - **Claude**: Production-ready tests with @WebMvcTest, jsonPath(), BDD naming
+    - **Gemini**: Same coverage, but used slower @SpringBootTest patterns
+    - **Key Insight**: Model quality matters beyond just metrics
+  </Card>
+</CardGroup>
+
+<Note>
+**Learn More**: See the full [Code Coverage Analysis](https://spring-ai-community.github.io/spring-ai-bench/index.html#_code_coverage_agent) in the official documentation for detailed results and methodology.
+</Note>
 
 ## Architecture
 
@@ -180,14 +224,28 @@ Spring AI Bench is built around a **Sandbox abstraction**:
     icon="rocket"
     href="https://spring-ai-community.github.io/spring-ai-bench/getting-started.html"
   >
-    Quick start guide
+    Quick start guide and setup
   </Card>
   <Card
-    title="Why Different"
+    title="Code Coverage Results"
+    icon="chart-line"
+    href="https://spring-ai-community.github.io/spring-ai-bench/index.html#_code_coverage_agent"
+  >
+    Detailed coverage analysis and results
+  </Card>
+  <Card
+    title="Agent Integration"
+    icon="robot"
+    href="https://spring-ai-community.github.io/spring-ai-bench/agents/claude-code.html"
+  >
+    Setting up AI agents for benchmarking
+  </Card>
+  <Card
+    title="Why Different from SWE-bench"
     icon="magnifying-glass-chart"
     href="https://spring-ai-community.github.io/spring-ai-bench/#_the_evidence_why_swe_bench_falls_short"
   >
-    Evidence and analysis
+    Evidence and comparative analysis
   </Card>
 </CardGroup>
 
