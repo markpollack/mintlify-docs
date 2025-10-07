@@ -25,6 +25,7 @@
       "pages": [
         "community/index",
         "community/governance",
+        "community/contributors",
         "community/project-guide",
         "community/releases",
         "community/integration"
@@ -51,7 +52,8 @@
         "projects/incubating/mcp-annotations",
         "projects/incubating/mcp-security",
         "projects/incubating/spring-ai-playground",
-        "projects/incubating/spring-agui"
+        "projects/incubating/spring-agui",
+        "projects/incubating/spring-ai-vaadin"
       ]
     },
     {
@@ -70,5 +72,10 @@
   "footerSocials": {
     "github": "https://github.com/spring-ai-community",
     "x": "https://x.com/springcentral"
+  },
+  "analytics": {
+    "plausible": {
+      "domain": "springaicommunity.mintlify.app"
+    }
   }
 }
