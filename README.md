@@ -1,43 +1,168 @@
-# Mintlify Starter Kit
+# Spring AI Community Documentation
 
-Use the starter kit to get your docs deployed and ready to customize.
+Mintlify-powered documentation for the Spring AI Community.
 
-Click the green **Use this template** button at the top of this repo to copy the Mintlify starter kit. The starter kit contains examples with
+## Quick Start
 
-- Guide pages
-- Navigation
-- Customizations
-- API reference pages
-- Use of popular components
+### Local Preview (REQUIRED before commits)
 
-**[Follow the full quickstart guide](https://starter.mintlify.com/quickstart)**
+```bash
+# Start development server
+./dev-preview.sh
 
-## Development
+# Or specify a port
+./dev-preview.sh 3001
 
-Install the [Mintlify CLI](https://www.npmjs.com/package/mint) to preview your documentation changes locally. To install, use the following command:
-
-```
-npm i -g mint
+# Or use mintlify directly
+mintlify dev
 ```
 
-Run the following command at the root of your documentation, where your `docs.json` is located:
+View at: http://localhost:3000
+
+### Pre-commit Validation
+
+**Always run before committing:**
+
+```bash
+./pre-commit-check.sh
+```
+
+This checks for:
+- Broken links
+- Invalid JSON syntax in mint.json
+- Git status
+
+## Development Workflow
+
+### 1. Make Changes
+Edit `.mdx` files or `mint.json`
+
+### 2. Preview Locally
+```bash
+./dev-preview.sh
+```
+
+### 3. Validate
+```bash
+./pre-commit-check.sh
+```
+
+### 4. Commit (if checks pass)
+```bash
+git add <files>
+git commit -m "Description"
+```
+
+### 5. Final Review
+```bash
+git show HEAD
+```
+
+### 6. Push
+```bash
+git push origin main
+```
+
+## Project Structure
 
 ```
-mint dev
+mintlify-docs/
+├── mint.json              # Navigation and config
+├── index.mdx             # Homepage
+├── community/            # Community docs
+│   ├── index.mdx
+│   ├── governance.mdx
+│   └── ...
+├── projects/             # Project showcase
+│   ├── production/
+│   └── incubating/
+├── benchmarking/         # Spring AI Bench info
+└── get-involved/         # Contribution guide
 ```
 
-View your local preview at `http://localhost:3000`.
+## Key Differences from AsciiDoc
 
-## Publishing changes
+| AsciiDoc | Mintlify |
+|----------|----------|
+| `.adoc` files | `.mdx` files |
+| `asciidoctor` to build | No build step |
+| `asciidoctor --watch` | `mintlify dev` |
+| Attributes (`:toc:`) | Components (`<Card>`) |
+| `include::file.adoc[]` | `<Snippet file="snippet.mdx" />` |
+| Config in files | Config in `mint.json` |
 
-Install our GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app) to propagate changes from your repo to your deployment. Changes are deployed to production automatically after pushing to the default branch.
+## Important Commands
 
-## Need help?
+```bash
+# Start dev server
+mintlify dev
 
-### Troubleshooting
+# Check for broken links
+mintlify broken-links
 
-- If your dev environment isn't running: Run `mint update` to ensure you have the most recent version of the CLI.
-- If a page loads as a 404: Make sure you are running in a folder with a valid `docs.json`.
+# Rename file and update references
+mintlify rename old-file.mdx new-file.mdx
 
-### Resources
-- [Mintlify documentation](https://mintlify.com/docs)
+# Validate OpenAPI spec
+mintlify openapi-check api-reference/openapi.json
+```
+
+## Common Components
+
+### Cards
+```mdx
+<Card title="Title" icon="icon-name" href="/path">
+  Content
+</Card>
+```
+
+### Card Groups
+```mdx
+<CardGroup cols={2}>
+  <Card>...</Card>
+  <Card>...</Card>
+</CardGroup>
+```
+
+### Steps
+```mdx
+<Steps>
+  <Step title="First">Content</Step>
+  <Step title="Second">Content</Step>
+</Steps>
+```
+
+### Accordions
+```mdx
+<AccordionGroup>
+  <Accordion title="Question">Answer</Accordion>
+</AccordionGroup>
+```
+
+### Tabs
+```mdx
+<Tabs>
+  <Tab title="Option 1">Content</Tab>
+  <Tab title="Option 2">Content</Tab>
+</Tabs>
+```
+
+### Callouts
+```mdx
+<Note>Important information</Note>
+<Warning>Warning message</Warning>
+<Info>Info message</Info>
+<Check>Success message</Check>
+```
+
+## Validation
+
+- Run `./pre-commit-check.sh` before every commit
+- The script checks for broken links and syntax errors
+- Review changes with `git diff` before committing
+
+## Resources
+
+- [Mintlify Documentation](https://mintlify.com/docs)
+- [Spring AI Community](https://github.com/spring-ai-community)
+- [MDX Documentation](https://mdxjs.com/)

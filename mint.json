@@ -1,0 +1,74 @@
+{
+  "$schema": "https://mintlify.com/schema.json",
+  "name": "Spring AI Community",
+  "logo": "/logo/universal.svg",
+  "favicon": "/logo/favicon.svg",
+  "colors": {
+    "primary": "#4A90E2",
+    "light": "#5BA3F5",
+    "dark": "#3A7BC8"
+  },
+  "topbarCtaButton": {
+    "name": "Propose Project",
+    "url": "https://github.com/spring-ai-community/community/issues/new?template=application.yml"
+  },
+  "anchors": [
+    {
+      "name": "GitHub",
+      "icon": "github",
+      "url": "https://github.com/spring-ai-community"
+    }
+  ],
+  "navigation": [
+    {
+      "group": "Community",
+      "pages": [
+        "community/index",
+        "community/governance",
+        "community/project-guide",
+        "community/releases",
+        "community/integration"
+      ]
+    },
+    {
+      "group": "Projects",
+      "pages": [
+        "projects/index"
+      ]
+    },
+    {
+      "group": "Production Projects",
+      "pages": [
+        "projects/production/moonshot",
+        "projects/production/qianfan"
+      ]
+    },
+    {
+      "group": "Incubating Projects",
+      "pages": [
+        "projects/incubating/spring-ai-agents",
+        "projects/incubating/spring-ai-bench",
+        "projects/incubating/mcp-annotations",
+        "projects/incubating/mcp-security",
+        "projects/incubating/spring-ai-playground",
+        "projects/incubating/spring-agui"
+      ]
+    },
+    {
+      "group": "Get Involved",
+      "pages": [
+        "get-involved/index"
+      ]
+    },
+    {
+      "group": "Benchmarking",
+      "pages": [
+        "benchmarking/index"
+      ]
+    }
+  ],
+  "footerSocials": {
+    "github": "https://github.com/spring-ai-community",
+    "x": "https://x.com/springcentral"
+  }
+}
