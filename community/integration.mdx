@@ -1,0 +1,78 @@
+---
+title: "Spring AI Integration"
+description: "How community projects are promoted alongside the main Spring AI project"
+---
+
+## Official Spring AI Community Projects
+
+Much like with Spring Cloud and Spring Data, there is a known set of stable community projects that are promoted alongside the main project. These appear on the project page on spring.io and are also incorporated into the reference documentation.
+
+<Info>
+The Spring AI team will decide which community projects will be officially recognized. The goal is to establish a quality bar so that users don't encounter outdated projects.
+</Info>
+
+## Bill of Materials (BOM) Policy
+
+Based on feedback from previous community project experiences, **community projects will not be listed in the Spring AI BOM** (bill of materials).
+
+<Note>
+This decision ensures that the Spring AI core team maintains control over compatibility guarantees while still supporting the community ecosystem.
+</Note>
+
+## Requirements for Official Listing
+
+Projects seeking to be listed as official Spring AI Community projects on the Spring AI website and documentation must demonstrate ongoing health and activity.
+
+### Evaluation Criteria
+
+<AccordionGroup>
+  <Accordion title="Periodic Review">
+    - Review by the Spring AI team (typically quarterly)
+    - Public GitHub activity metrics (commits, issue responses, PR reviews)
+  </Accordion>
+
+  <Accordion title="Quality Standards">
+    **Build & Testing**
+    - Passing CI pipeline with unit and/or integration tests
+
+    **Documentation**
+    - Up-to-date project documentation that follows Spring AI's format and standards
+
+    **Compatibility**
+    - Compatibility with the latest Spring AI release
+    - Alignment with Spring AI's architecture, coding standards, and integration patterns
+  </Accordion>
+
+  <Accordion title="Code Quality">
+    Code quality and structure must meet Spring team standards for potential inclusion in the core project, including:
+    - Proper use of Spring abstractions
+    - Consistent error handling
+    - Alignment with Spring's programming model
+  </Accordion>
+</AccordionGroup>
+
+### No Formal Reporting Required
+
+<Check>
+No formal reporting is required from project maintainers beyond what is publicly visible in repositories. The Spring AI team will use these public indicators to determine which community projects to promote.
+</Check>
+
+## Project Lifecycle Management
+
+### Active Projects
+
+Projects that remain active and meet quality standards will continue to be promoted on:
+- Spring AI project page on spring.io
+- Spring AI reference documentation
+- Spring AI community listings
+
+### Inactive Projects
+
+<Warning>
+Projects that remain inactive for extended periods (6+ months) or fall below quality standards may be:
+- Removed from official listings
+- Remain in the spring-ai-community organization
+- Potentially become candidates for archival
+</Warning>
+
+This ensures that users always find maintained, high-quality projects when browsing official Spring AI Community recommendations.

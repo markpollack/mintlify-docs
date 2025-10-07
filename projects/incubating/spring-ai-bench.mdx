@@ -1,0 +1,200 @@
+---
+title: "Spring AI Bench ⭐"
+description: "Open benchmarking suite for Java-centric AI developer agents"
+---
+
+<img
+  src="https://img.shields.io/badge/Status-Incubating-blue"
+  alt="Incubating Status"
+/>
+<img
+  src="https://img.shields.io/badge/Featured-⭐-gold"
+  alt="Featured Project"
+/>
+
+## Overview
+
+Spring AI Bench measures modern agents on real enterprise development tasks — issue triage, PR review, coverage uplift, compliance validation, dependency upgrades. Run benchmarks on YOUR repos to measure YOUR scenarios.
+
+**If agents have evolved, benchmarks must evolve too.**
+
+<Warning>
+Existing benchmarks (SWE-bench) measure yesterday's agents on static 2023 Python patches. They can't evaluate the agents teams actually use (Claude, Gemini, Amazon Q, Amp) on enterprise Java workflows.
+</Warning>
+
+## Why Different from SWE-bench
+
+<CardGroup cols={3}>
+  <Card title="Full Dev Lifecycle" icon="circle-nodes">
+    Beyond patch loops: triage, PR review, coverage, compliance
+  </Card>
+  <Card title="Java-First" icon="mug-hot">
+    Addresses 7-10% training bias gap in Python-centric benchmarks
+  </Card>
+  <Card title="Any Agent" icon="wand-magic-sparkles">
+    Claude, Gemini, Amazon Q, Amp, custom — not just one architecture
+  </Card>
+  <Card title="Reproducible" icon="repeat">
+    One-click Docker + open scaffolding
+  </Card>
+  <Card title="Modern Paradigm" icon="forward">
+    2025 declarative goal agents, not 2024 patch-loops
+  </Card>
+  <Card title="Open Standards" icon="handshake">
+    Following best practices for benchmark design
+  </Card>
+</CardGroup>
+
+## What Spring AI Bench Does
+
+**Can AI act as a true Java developer agent?**
+
+Not just fixing bugs, but:
+
+<Steps>
+  <Step title="Issue Analysis">
+    Analyzing and labeling issues with domain-specific labels
+  </Step>
+  <Step title="PR Review">
+    Comprehensive pull request analysis with risk assessment
+  </Step>
+  <Step title="Test Coverage">
+    Raising coverage while keeping builds green
+  </Step>
+  <Step title="Static Analysis">
+    Cleaning up checkstyle violations and code quality issues
+  </Step>
+  <Step title="API Migration">
+    Migrating APIs and upgrading dependencies
+  </Step>
+  <Step title="Compliance">
+    Keeping builds compliant with enterprise standards
+  </Step>
+</Steps>
+
+That's the standard enterprise developers hold themselves to — and the standard we should evaluate AI against.
+
+## Run It Yourself
+
+Unlike static benchmarks, Spring AI Bench runs on YOUR repos:
+
+```bash
+# 1. Clone and build dependencies (5 minutes)
+git clone https://github.com/spring-ai-community/spring-ai-agents.git
+cd spring-ai-agents && ./mvnw clean install -DskipTests
+
+git clone https://github.com/spring-ai-community/spring-ai-bench.git
+cd spring-ai-bench
+
+# 2. Set your API keys
+export ANTHROPIC_API_KEY=your_key
+export GEMINI_API_KEY=your_key
+
+# 3. Run on YOUR codebase
+./mvnw test -Dtest=HelloWorldMultiAgentTest -pl bench-agents
+
+# 4. View results in your browser
+open file:///tmp/bench-reports/index.html
+```
+
+## Current Implementation
+
+### Available Agents
+
+<Tabs>
+  <Tab title="hello-world">
+    Deterministic mock agent for testing infrastructure (115 ms)
+  </Tab>
+  <Tab title="hello-world-ai (Gemini)">
+    AI-powered agent via Spring AI Agents (5.3 seconds)
+  </Tab>
+  <Tab title="hello-world-ai (Claude)">
+    Thorough, detailed analysis (99 seconds)
+  </Tab>
+</Tabs>
+
+All implementations successfully completed the hello-world file creation task with **100% accuracy**.
+
+### Benchmark Tracks
+
+<AccordionGroup>
+  <Accordion title="✅ Available Now">
+    - **hello-world**: File creation and basic infrastructure validation
+  </Accordion>
+
+  <Accordion title="🚧 In Active Development">
+    - **Test Coverage Uplift**: Generate tests to achieve specific coverage thresholds
+    - **Issue Analysis & Labeling**: Automated issue triage and classification
+    - **Pull Request Review**: Comprehensive PR analysis with structured reports
+    - **Static Analysis Remediation**: Fix code quality issues while preserving functionality
+  </Accordion>
+
+  <Accordion title="📋 Future Roadmap">
+    - Integration Testing
+    - Bug Fixing
+    - Dependency Upgrades
+    - API Migration
+    - Compliance Validation
+    - Performance Optimization
+    - Documentation Generation
+  </Accordion>
+</AccordionGroup>
+
+## Architecture
+
+Spring AI Bench is built around a **Sandbox abstraction**:
+
+<CardGroup cols={3}>
+  <Card title="LocalSandbox" icon="laptop">
+    Direct process execution (fast, development)
+  </Card>
+  <Card title="DockerSandbox" icon="docker">
+    Container isolation (secure, production-ready)
+  </Card>
+  <Card title="CloudSandbox" icon="cloud">
+    Distributed execution (planned)
+  </Card>
+</CardGroup>
+
+**Key components:**
+- **BenchHarness**: End-to-end benchmark execution
+- **AgentRunner**: Agent execution with Spring AI Agents integration
+- **SuccessVerifier**: Validation of benchmark results
+- **ReportGenerator**: HTML and JSON report generation
+
+## Resources
+
+<CardGroup cols={2}>
+  <Card
+    title="Official Documentation"
+    icon="book"
+    href="https://spring-ai-community.github.io/spring-ai-bench/"
+  >
+    Complete documentation and analysis
+  </Card>
+  <Card
+    title="GitHub Repository"
+    icon="github"
+    href="https://github.com/spring-ai-community/spring-ai-bench"
+  >
+    View source code and contribute
+  </Card>
+  <Card
+    title="Getting Started"
+    icon="rocket"
+    href="https://spring-ai-community.github.io/spring-ai-bench/getting-started.html"
+  >
+    Quick start guide
+  </Card>
+  <Card
+    title="Why Different"
+    icon="magnifying-glass-chart"
+    href="https://spring-ai-community.github.io/spring-ai-bench/#_the_evidence_why_swe_bench_falls_short"
+  >
+    Evidence and analysis
+  </Card>
+</CardGroup>
+
+## License
+
+This project is licensed under the Apache License 2.0 - see the [LICENSE](https://github.com/spring-ai-community/spring-ai-bench/blob/main/LICENSE) file for details.

@@ -1,0 +1,175 @@
+---
+title: "MCP Annotations"
+description: "Annotation-based method handling for Model Context Protocol servers in Java"
+---
+
+<img
+  src="https://img.shields.io/badge/Status-Incubating-blue"
+  alt="Incubating Status"
+/>
+<img
+  src="https://img.shields.io/maven-central/v/org.springaicommunity/mcp-annotations.svg?label=Maven%20Central"
+  alt="Maven Central"
+/>
+
+## Overview
+
+The MCP Annotations project provides annotation-based method handling for [Model Context Protocol (MCP)](https://github.com/modelcontextprotocol/spec) servers in Java. It simplifies the creation and registration of MCP server methods through a clean, declarative approach using Java annotations.
+
+## Features
+
+<CardGroup cols={2}>
+  <Card title="Annotation-based" icon="at">
+    Simplifies creation and registration of MCP methods
+  </Card>
+  <Card title="Sync & Async" icon="arrows-split-up-and-left">
+    Support for both synchronous and asynchronous operations
+  </Card>
+  <Card title="Stateful & Stateless" icon="toggle-on">
+    Full server exchange or lightweight transport context
+  </Card>
+  <Card title="Auto Schema Generation" icon="diagram-project">
+    Automatic JSON schema generation from method signatures
+  </Card>
+  <Card title="Dynamic Schemas" icon="wand-magic-sparkles">
+    Handle dynamic schemas at runtime via CallToolRequest
+  </Card>
+  <Card title="Type Safe" icon="shield-check">
+    Full Java type safety with comprehensive validation
+  </Card>
+</CardGroup>
+
+## Key Components
+
+### Server Annotations
+
+<AccordionGroup>
+  <Accordion title="@McpTool">
+    Annotates methods that implement MCP tools with automatic JSON schema generation
+  </Accordion>
+  <Accordion title="@McpResource">
+    Annotates methods that provide access to resources via URI templates
+  </Accordion>
+  <Accordion title="@McpPrompt">
+    Annotates methods that generate prompt messages
+  </Accordion>
+  <Accordion title="@McpComplete">
+    Annotates methods that provide completion functionality for prompts or URI templates
+  </Accordion>
+</AccordionGroup>
+
+### Client Annotations
+
+<AccordionGroup>
+  <Accordion title="@McpLogging">
+    Handle logging message notifications from MCP servers
+  </Accordion>
+  <Accordion title="@McpSampling">
+    Handle sampling requests from MCP servers
+  </Accordion>
+  <Accordion title="@McpProgress">
+    Handle progress notifications for long-running operations
+  </Accordion>
+  <Accordion title="@McpElicitation">
+    Handle elicitation requests to gather additional information from users
+  </Accordion>
+</AccordionGroup>
+
+## Quick Start
+
+### Installation
+
+```xml
+<dependency>
+    <groupId>org.springaicommunity</groupId>
+    <artifactId>mcp-annotations</artifactId>
+    <version>...</version>
+</dependency>
+```
+
+And the Java MCP SDK:
+
+```xml
+<dependency>
+    <groupId>io.modelcontextprotocol.sdk</groupId>
+    <artifactId>mcp</artifactId>
+    <version>...</version>
+</dependency>
+```
+
+### Simple Tool Example
+
+```java
+public class CalculatorToolProvider {
+
+    @McpTool(name = "add", description = "Add two numbers together")
+    public int add(
+            @McpToolParam(description = "First number to add", required = true) int a,
+            @McpToolParam(description = "Second number to add", required = true) int b) {
+        return a + b;
+    }
+
+    @McpTool(name = "multiply", description = "Multiply two numbers")
+    public double multiply(
+            @McpToolParam(description = "First number", required = true) double x,
+            @McpToolParam(description = "Second number", required = true) double y) {
+        return x * y;
+    }
+}
+```
+
+### Create MCP Server
+
+```java
+List<SyncToolSpecification> toolSpecifications =
+    new SyncMcpToolProvider(List.of(calculatorProvider)).getToolSpecifications();
+
+McpSyncServer syncServer = McpServer.sync(transportProvider)
+    .serverInfo("calculator-server", "1.0.0")
+    .capabilities(ServerCapabilities.builder()
+        .tools(true)
+        .build())
+    .tools(toolSpecifications)
+    .build();
+```
+
+## Spring AI MCP Integration
+
+For a complete out-of-the-box experience with Spring Boot, use the [Spring AI MCP Annotation Auto-configurations](https://docs.spring.io/spring-ai/reference/1.1-SNAPSHOT/api/mcp/mcp-annotations-overview.html).
+
+<Card
+  title="Spring AI MCP Annotations Example"
+  icon="leaf"
+  href="https://github.com/spring-projects/spring-ai-examples/tree/main/model-context-protocol/mcp-annotations"
+>
+  Check out the official Spring AI example
+</Card>
+
+## Requirements
+
+- Java 17 or higher
+- Reactor Core (for async operations)
+- MCP Java SDK 0.13.0-SNAPSHOT or higher
+
+## Resources
+
+<CardGroup cols={2}>
+  <Card
+    title="GitHub Repository"
+    icon="github"
+    href="https://github.com/spring-ai-community/mcp-annotations"
+  >
+    View source code and contribute
+  </Card>
+  <Card
+    title="Maven Central"
+    icon="download"
+    href="https://central.sonatype.com/artifact/org.springaicommunity/mcp-annotations"
+  >
+    Download releases and snapshots
+  </Card>
+</CardGroup>
+
+## License
+
+This project is licensed under the Apache License 2.0 - see the [LICENSE](https://github.com/spring-ai-community/mcp-annotations/blob/main/LICENSE) file for details.

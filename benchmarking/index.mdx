@@ -1,0 +1,141 @@
+---
+title: "Spring AI Bench"
+description: "Open benchmarking for enterprise Java AI agents"
+---
+
+## Overview
+
+Spring AI Bench is an open-source benchmarking framework focused on evaluating AI agents in enterprise Java development contexts. The project aims to provide transparent, reproducible benchmarks that address the limitations of existing approaches.
+
+## Why This Matters
+
+### The Problem with Current Benchmarks
+
+Existing benchmarks like SWE-bench were groundbreaking for their time, but they have limitations:
+
+<Warning>
+**Key Limitations:**
+- **Python-centric**: 7-10% performance gap for non-Python languages
+- **Static datasets**: 2023 patches don't reflect current development patterns
+- **Narrow scope**: Only patch-loop agents, missing modern declarative approaches
+- **Single architecture**: Can't evaluate Claude, Gemini, Amazon Q, or other production agents
+- **Contamination**: Studies show 60%+ verified → 19% live performance drops
+</Warning>
+
+### Our Approach
+
+<Steps>
+  <Step title="Full Development Lifecycle">
+    Measure agents on real enterprise tasks: issue triage, PR review, test coverage, compliance, API migration
+  </Step>
+  <Step title="Language Diversity">
+    Java-first focus to address training bias, but extensible to other JVM and non-JVM languages
+  </Step>
+  <Step title="Agent Flexibility">
+    Support any agent via `AgentModel` abstraction—evaluate the tools YOUR team actually uses
+  </Step>
+  <Step title="Transparency & Reproducibility">
+    One-click Docker execution, open scaffolding, clear documentation of methodology
+  </Step>
+</Steps>
+
+## Technical Foundation
+
+Spring AI Bench provides:
+
+<CardGroup cols={3}>
+  <Card title="Sandbox Isolation" icon="box">
+    Docker/local sandboxes for secure, reproducible execution
+  </Card>
+  <Card title="Agent Abstraction" icon="puzzle-piece">
+    AgentModel interface supports any agent implementation
+  </Card>
+  <Card title="Benchmark Tracks" icon="list-check">
+    Modular tracks for different enterprise development scenarios
+  </Card>
+  <Card title="Reporting" icon="chart-simple">
+    HTML/JSON reports with detailed metrics and analysis
+  </Card>
+  <Card title="Extensibility" icon="arrows-split-up-and-left">
+    Run on YOUR repos with YOUR scenarios
+  </Card>
+  <Card title="Open Source" icon="code-branch">
+    Apache 2.0 licensed, community contributions welcome
+  </Card>
+</CardGroup>
+
+## Current Status & Roadmap
+
+### ✅ Completed
+
+- Core benchmarking infrastructure
+- Sandbox isolation (Docker + local)
+- Agent integration framework
+- Multi-agent comparison support
+- HTML/JSON reporting
+
+### 🚧 In Progress
+
+- Developing enterprise-focused benchmark tracks (test coverage, PR review, issue triage)
+- Expanding eval data collection
+- Gathering feedback from enterprise Java teams
+- Improving documentation and examples
+
+### 📋 Future Plans
+
+- Expanded language support (Kotlin, Scala, Groovy)
+- Cloud-based distributed execution
+- Integration with CI/CD pipelines
+- Additional benchmark tracks for common enterprise scenarios
+
+## Get Involved
+
+This is a community-driven initiative. We welcome participation from:
+
+<CardGroup cols={2}>
+  <Card title="Enterprise Teams" icon="building">
+    Share your real-world use cases and evaluation needs
+  </Card>
+  <Card title="AI Providers" icon="wand-magic-sparkles">
+    Contribute agent implementations and participate in benchmarks
+  </Card>
+  <Card title="Academic Researchers" icon="microscope">
+    Collaborate on methodology and research
+  </Card>
+  <Card title="Open Source Contributors" icon="code">
+    Improve the framework, add benchmark tracks, fix bugs
+  </Card>
+</CardGroup>
+
+## Resources
+
+<CardGroup cols={2}>
+  <Card
+    title="Spring AI Bench Documentation"
+    icon="book"
+    href="https://spring-ai-community.github.io/spring-ai-bench/"
+  >
+    Technical documentation for the benchmarking framework
+  </Card>
+  <Card
+    title="Spring AI Bench Project"
+    icon="flask"
+    href="/projects/incubating/spring-ai-bench"
+  >
+    Learn more about the Spring AI Bench project
+  </Card>
+  <Card
+    title="GitHub Repository"
+    icon="github"
+    href="https://github.com/spring-ai-community/spring-ai-bench"
+  >
+    View source code and contribute
+  </Card>
+  <Card
+    title="Contact Us"
+    icon="envelope"
+    href="https://github.com/spring-ai-community/community/issues"
+  >
+    Get in touch about collaboration opportunities
+  </Card>
+</CardGroup>

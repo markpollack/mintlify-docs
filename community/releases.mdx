@@ -1,0 +1,84 @@
+---
+title: "Release Management"
+description: "Guidelines for releasing Spring AI Community projects"
+---
+
+## Release Strategy
+
+Releases may align with:
+- Spring AI OSS releases
+- Commercial product releases
+- Independent schedules
+
+<Info>
+Projects have full flexibility in their release timing and strategy.
+</Info>
+
+## Spring AI Team Support
+
+The Spring AI Team can assist with:
+
+<CardGroup cols={3}>
+  <Card title="Repository Setup" icon="git">
+    Bootstrapping initial repositories
+  </Card>
+  <Card title="Project Templates" icon="file-code">
+    Providing a standardized project template
+  </Card>
+  <Card title="CI/CD Workflows" icon="infinity">
+    Setting up CI/CD workflows using GitHub Actions
+  </Card>
+</CardGroup>
+
+## Release Requirements
+
+<AccordionGroup>
+  <Accordion title="Semantic Versioning">
+    All projects must follow a clear [Semantic Versioning](https://semver.org/) (semver) scheme:
+
+    - **MAJOR**: Breaking changes
+    - **MINOR**: New features (backwards compatible)
+    - **PATCH**: Bug fixes (backwards compatible)
+  </Accordion>
+
+  <Accordion title="Passing CI/CD Pipeline">
+    All tests and quality checks must pass before release
+  </Accordion>
+
+  <Accordion title="Documentation Updates">
+    Documentation must reflect any new features, changes, or deprecations
+  </Accordion>
+
+  <Accordion title="Clear Changelog">
+    A well-structured changelog describing what has changed
+  </Accordion>
+</AccordionGroup>
+
+## Maven Central Publication
+
+### Preferred Path
+
+<Steps>
+  <Step title="Use GitHub Actions">
+    The preferred release path is via GitHub Actions in the community repository
+  </Step>
+  <Step title="Maven Central Publishing">
+    Publish to Maven Central using GitHub-based publishing conventions
+  </Step>
+  <Step title="Use Standard GroupId">
+    Artifacts should use the groupId `io.github.springaicommunity`
+  </Step>
+</Steps>
+
+### Artifact Naming
+
+- Artifact IDs (e.g., `spring-ai-rag-helper`) may include dashes and should follow standard naming patterns
+- Root Java package names are flexible and up to the contributor, though they should follow common Spring conventions
+
+<Note>
+This naming suggestion is specific to the GitHub-based Maven Central process. Project owners can use their own bespoke process and their own artifact IDs to publish to a public Maven repository.
+</Note>
+
+<Warning>
+The release templates for community-hosted repositories **cannot use Spring's internal Maven Central credentials** — credential sharing is not permitted.
+</Warning>

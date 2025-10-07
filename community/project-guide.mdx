@@ -1,0 +1,128 @@
+---
+title: "Project Creation Guide"
+description: "Requirements and process for creating a Spring AI Community project"
+---
+
+## Project Creation Process
+
+You can apply to create a new project using the community Issue Form in the community repository. After submission, a GitHub issue will be automatically created where the Spring AI Community Leads will discuss your proposal with you. This discussion will help determine if your project meets the necessary requirements for inclusion.
+
+<Card
+  title="Propose a New Project"
+  icon="file-pen"
+  href="https://github.com/spring-ai-community/community/issues/new?template=application.yml"
+  horizontal
+>
+  Create a new issue in the community repository
+</Card>
+
+## Project Requirements
+
+<AccordionGroup>
+  <Accordion title="Working Proof of Concept">
+    A functioning implementation that uses artifacts (dependencies, libraries) from the Spring AI project and demonstrates integration with Spring AI's core APIs. The code should show clear value to the Spring AI ecosystem and solve a real problem that other developers face.
+  </Accordion>
+
+  <Accordion title="Clear Project Scope and Description">
+    Projects must provide a clear, concise description of their purpose, scope, and goals. This should include:
+    - What problems the project solves
+    - Who the intended users are
+    - How it fits within the Spring AI ecosystem
+
+    This helps prevent scope creep and ensures alignment with Spring AI's mission.
+  </Accordion>
+
+  <Accordion title="Identify Development Team">
+    Projects must have at least one committed developer.
+  </Accordion>
+
+  <Accordion title="Basic Documentation in English">
+    Documentation must clearly explain what the project does, how to get started, and basic usage examples. While it doesn't need to be exhaustive at this stage, it should be sufficient for other developers to understand and begin using the project. All documentation must be in English to ensure accessibility to the global Spring community.
+  </Accordion>
+
+  <Accordion title="Unit and Integration Tests">
+    The project must include a basic suite of integration tests that demonstrate proper functionality and integration with Spring AI. These tests should verify the core features and integration points, ensuring reliability and making it easier to identify breaking changes.
+  </Accordion>
+
+  <Accordion title="Agreement to Project Guidelines">
+    Maintainers must agree to follow the Spring AI code of conduct. This ensures alignment with Spring AI's values and practices while fostering a collaborative community environment.
+  </Accordion>
+
+  <Accordion title="Apache 2 License">
+    This is for maximum license compatibility with the Spring ecosystem.
+  </Accordion>
+
+  <Accordion title="Public Repository with Open Development">
+    All development must occur in a public repository with transparent processes for contributions and issue tracking. This can all occur on GitHub. This ensures community visibility and encourages collaboration while building trust in the project's development process.
+  </Accordion>
+
+  <Accordion title="Clear Contribution Guidelines">
+    The project should define contribution guidelines. Can use existing contribution guidelines such as the [Spring Framework Contributing Guide](https://github.com/spring-projects/spring-framework/blob/main/CONTRIBUTING.md) as a basis. The guidelines need to be clear and welcoming to new contributors.
+  </Accordion>
+</AccordionGroup>
+
+## Versioning Requirements
+
+Projects must follow semantic versioning (MAJOR.MINOR.PATCH):
+
+<CodeGroup>
+```text Non-stable versions
+0.x versions (pre-1.0)
+Example: 0.1.0, 0.2.5, 0.9.3
+```
+
+```text Stable versions
+1.x or higher
+Example: 1.0.0, 2.3.1, 3.0.0
+```
+</CodeGroup>
+
+## Project Naming and Package Guidelines
+
+### Naming
+
+<Steps>
+  <Step title="Follow Patterns">
+    Project names typically follow the pattern `spring-ai-[key-feature]`
+
+    Examples: `spring-ai-swarm`, `spring-ai-vectorstore`
+  </Step>
+  <Step title="Be Descriptive">
+    Projects aren't strictly limited to this pattern, but should be descriptive and relevant
+  </Step>
+  <Step title="Stay Appropriate">
+    Names must not be offensive or inappropriate
+  </Step>
+  <Step title="Use Spring Conventions">
+    All projects should follow common Spring naming conventions/patterns for classes
+  </Step>
+</Steps>
+
+<Note>
+Final project name is handled on a case-by-case basis during the submission process.
+</Note>
+
+### Packaging
+
+You have two options for publishing to Maven Central:
+
+<Tabs>
+  <Tab title="GitHub Org Publishing">
+    Publish using GitHub's process for projects in an org to release into Maven Central using `io.github.spring-ai-community` as the groupId
+  </Tab>
+  <Tab title="Custom Publishing">
+    Publish to Maven Central in your own bespoke manner with your own groupId
+  </Tab>
+</Tabs>
+
+- Free choice of the Java root package name
+
+## Commercial and Organizational Structure
+
+<Info>
+**Commercial projects are welcome!**
+
+- Commercial ownership/control is acceptable
+- Single-vendor projects are welcome
+- Projects should be transparent about their commercial relationships
+</Info>

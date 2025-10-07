@@ -1,0 +1,155 @@
+---
+title: "MCP Security"
+description: "Security support for Model Context Protocol implementations"
+---
+
+<img
+  src="https://img.shields.io/badge/Status-Incubating-blue"
+  alt="Incubating Status"
+/>
+
+## Overview
+
+The MCP Security project provides security support and best practices for implementing secure Model Context Protocol (MCP) servers and clients in Java.
+
+<Note>
+This is an incubating project focused on bringing enterprise-grade security to MCP implementations.
+</Note>
+
+## Project Goals
+
+<CardGroup cols={2}>
+  <Card title="Secure Transport" icon="lock">
+    Secure communication channels for MCP
+  </Card>
+  <Card title="Authentication" icon="key">
+    Authentication mechanisms for MCP servers/clients
+  </Card>
+  <Card title="Authorization" icon="shield-halved">
+    Fine-grained access control for MCP operations
+  </Card>
+  <Card title="Audit Logging" icon="file-shield">
+    Security audit trails for MCP interactions
+  </Card>
+</CardGroup>
+
+## Key Features (Planned)
+
+<AccordionGroup>
+  <Accordion title="Transport Security">
+    - TLS/SSL support for MCP transports
+    - Certificate validation and management
+    - Secure WebSocket connections
+  </Accordion>
+
+  <Accordion title="Authentication & Authorization">
+    - API key authentication
+    - OAuth2/OIDC integration
+    - Role-based access control (RBAC)
+    - Policy-based authorization
+  </Accordion>
+
+  <Accordion title="Input Validation & Sanitization">
+    - Schema validation for MCP requests
+    - Parameter sanitization
+    - Protection against injection attacks
+  </Accordion>
+
+  <Accordion title="Rate Limiting & Throttling">
+    - Request rate limiting
+    - Resource usage quotas
+    - DDoS protection
+  </Accordion>
+
+  <Accordion title="Audit & Compliance">
+    - Security event logging
+    - Audit trail generation
+    - Compliance reporting
+  </Accordion>
+</AccordionGroup>
+
+## Why MCP Security Matters
+
+The Model Context Protocol enables powerful integrations between AI systems and external tools/resources. However, this power requires careful security considerations:
+
+<Warning>
+**Security Risks:**
+- Unauthorized access to sensitive resources
+- Data exfiltration through MCP tools
+- Code injection via malicious prompts
+- Resource exhaustion attacks
+- Privilege escalation
+</Warning>
+
+MCP Security aims to provide a comprehensive security framework to mitigate these risks.
+
+## Use Cases
+
+<Steps>
+  <Step title="Enterprise MCP Servers">
+    Secure MCP servers for enterprise environments with strict security requirements
+  </Step>
+  <Step title="Multi-tenant Systems">
+    Isolate MCP resources and operations across different tenants
+  </Step>
+  <Step title="Public MCP Services">
+    Protect public-facing MCP endpoints from abuse and attacks
+  </Step>
+  <Step title="Regulated Industries">
+    Meet compliance requirements for healthcare, finance, and government sectors
+  </Step>
+</Steps>
+
+## Getting Started
+
+<Info>
+This project is currently in the incubation phase. Documentation and examples will be added as features are implemented.
+</Info>
+
+## Roadmap
+
+<Steps>
+  <Step title="Phase 1: Foundation">
+    - Core security abstractions
+    - Basic authentication support
+    - TLS/SSL transport security
+  </Step>
+  <Step title="Phase 2: Authorization">
+    - RBAC implementation
+    - Policy engine integration
+    - Resource-level permissions
+  </Step>
+  <Step title="Phase 3: Advanced Features">
+    - Rate limiting and throttling
+    - Audit logging framework
+    - Security monitoring and alerting
+  </Step>
+  <Step title="Phase 4: Integration">
+    - Spring Security integration
+    - OAuth2/OIDC support
+    - Enterprise identity provider integration
+  </Step>
+</Steps>
+
+## Resources
+
+<Card
+  title="GitHub Repository"
+  icon="github"
+  href="https://github.com/spring-ai-community/mcp-security"
+>
+  View source code and contribute
+</Card>
+
+## Contributing
+
+We welcome contributions! Areas where we need help:
+
+- Security architecture and design
+- Implementation of authentication mechanisms
+- Security testing and vulnerability assessment
+- Documentation and best practices
+
+## License
+
+This project is licensed under the Apache License 2.0.

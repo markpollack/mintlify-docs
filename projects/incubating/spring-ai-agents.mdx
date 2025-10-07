@@ -1,0 +1,190 @@
+---
+title: "Spring AI Agents ⭐"
+description: "Autonomous CLI agent integrations for the Spring AI ecosystem"
+---
+
+<img
+  src="https://img.shields.io/badge/Status-Incubating-blue"
+  alt="Incubating Status"
+/>
+<img
+  src="https://img.shields.io/badge/Featured-⭐-gold"
+  alt="Featured Project"
+/>
+
+## Overview
+
+Spring AI Agents provides autonomous CLI agent integrations for the Spring AI ecosystem. This project brings Claude Code, Gemini CLI, and SWE-bench agents to Spring applications as first-class citizens with Spring Boot auto-configuration support and secure sandbox isolation.
+
+<Note>
+**Version**: 0.1.0-SNAPSHOT
+Maven snapshot artifacts are available from [Maven Central Snapshots](https://central.sonatype.com/repository/maven-snapshots/org/springaicommunity/agents/)
+</Note>
+
+## Key Features
+
+Transform autonomous CLI agents into pluggable Spring components:
+
+<CardGroup cols={2}>
+  <Card title="Claude Code CLI" icon="robot">
+    Production-ready code assistance and autonomous development tasks
+  </Card>
+  <Card title="Gemini CLI" icon="sparkles">
+    Google's Gemini models through command-line interface
+  </Card>
+  <Card title="SWE-bench Agent" icon="chart-bar">
+    Software engineering benchmarking and evaluation
+  </Card>
+  <Card title="Secure Sandbox" icon="shield">
+    Docker container isolation with local fallback
+  </Card>
+</CardGroup>
+
+## Highlighted Achievement
+
+### Code Coverage Agent
+
+An autonomous agent that increased test coverage from **0% to 71.4%** on Spring's [gs-rest-service](https://spring.io/guides/gs/rest-service) tutorial.
+
+<Check>
+**Key Finding**: Both Claude and Gemini achieved the same coverage percentage, but **only Claude followed all Spring WebMVC best practices** (@WebMvcTest, jsonPath(), BDD naming).
+</Check>
+
+> Model quality matters: Same coverage, different code quality. Claude generated production-ready tests while Gemini used slower patterns (@SpringBootTest).
+
+## Quick Start
+
+### Try with JBang (Zero Setup)
+
+The fastest way to try Spring AI Agents - no cloning, no building:
+
+```bash
+# One-time setup: Add the catalog
+jbang catalog add --name=springai \
+  https://raw.githubusercontent.com/spring-ai-community/spring-ai-agents/main/jbang-catalog.json
+
+# Static content example
+jbang agents@springai hello-world \
+  path=greeting.txt \
+  content="Hello Spring AI Agents!"
+
+# AI-powered examples (requires API keys)
+export ANTHROPIC_API_KEY="your-key-here"
+
+jbang agents@springai hello-world-agent-ai \
+  path=ai-greeting.txt \
+  content="a creative message about AI agents" \
+  provider=claude
+```
+
+### Maven Dependencies
+
+```xml
+<dependency>
+    <groupId>org.springaicommunity.agents</groupId>
+    <artifactId>spring-ai-starter-agent</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+</dependency>
+```
+
+### Basic Usage
+
+```java
+@Autowired
+private AgentClient agentClient;
+
+// Simple goal execution
+String result = agentClient.run("Fix the failing test in UserServiceTest");
+
+// Advanced goal configuration
+AgentClientResponse response = agentClient
+    .goal("Generate comprehensive API documentation")
+    .workingDirectory(projectRoot)
+    .run();
+```
+
+## Agent Advisors
+
+Spring AI Agents implements the same advisor pattern as Spring AI's ChatClient:
+
+```java
+public class WorkspaceContextAdvisor implements AgentCallAdvisor {
+    @Override
+    public AgentClientResponse adviseCall(AgentClientRequest request,
+                                          AgentCallAdvisorChain chain) {
+        // Inject context before execution
+        String workspaceInfo = analyzeWorkspace(request.workingDirectory());
+        request.context().put("workspace_info", workspaceInfo);
+
+        // Execute agent
+        AgentClientResponse response = chain.nextCall(request);
+
+        // Add post-execution metrics
+        response.context().put("files_modified", countModifiedFiles());
+        return response;
+    }
+}
+```
+
+**Common Use Cases:**
+- Context Engineering (git cloning, dependency sync)
+- Evaluation/Judges (test running, file verification)
+- Security (goal validation, operation blocking)
+- Observability (metrics, logging, performance)
+
+## Production Ready
+
+<AccordionGroup>
+  <Accordion title="Resilience">
+    Circuit breakers, retries, timeouts, and comprehensive error handling
+  </Accordion>
+  <Accordion title="Security">
+    Docker container isolation with automatic fallback to local execution
+  </Accordion>
+  <Accordion title="Spring Boot Integration">
+    Auto-configuration, externalized configuration, and actuator support
+  </Accordion>
+  <Accordion title="Observability">
+    Micrometer metrics and structured logging
+  </Accordion>
+  <Accordion title="Type Safety">
+    Full Java type safety with comprehensive JavaDoc
+  </Accordion>
+</AccordionGroup>
+
+## Resources
+
+<CardGroup cols={2}>
+  <Card
+    title="Official Documentation"
+    icon="book"
+    href="https://spring-ai-community.github.io/spring-ai-agents/"
+  >
+    Complete documentation and guides
+  </Card>
+  <Card
+    title="GitHub Repository"
+    icon="github"
+    href="https://github.com/spring-ai-community/spring-ai-agents"
+  >
+    View source code and contribute
+  </Card>
+  <Card
+    title="Getting Started"
+    icon="rocket"
+    href="https://spring-ai-community.github.io/spring-ai-agents/getting-started.html"
+  >
+    Quick start guide
+  </Card>
+  <Card
+    title="API Reference"
+    icon="code"
+    href="https://spring-ai-community.github.io/spring-ai-agents/api/agentclient.html"
+  >
+    API documentation
+  </Card>
+</CardGroup>
+
+## License
+
+Spring AI Agents is Open Source software released under the [Apache 2.0 license](https://github.com/spring-ai-community/spring-ai-agents/blob/main/LICENSE).

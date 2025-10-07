@@ -1,0 +1,105 @@
+---
+title: "Moonshot"
+description: "Java client for Moonshot AI API with Spring AI integration"
+---
+
+<img
+  src="https://img.shields.io/badge/Status-Production-green"
+  alt="Production Status"
+/>
+
+## Overview
+
+The Moonshot AI Java Client provides a comprehensive Java implementation for the Moonshot AI API. It is based on the Spring AI project's Moonshot integration and has been extracted to be used as a standalone library.
+
+Moonshot AI provides powerful Chinese language models with varying context windows to suit different use cases.
+
+## Features
+
+<CardGroup cols={2}>
+  <Card title="Chat Models" icon="comments">
+    Comprehensive implementation supporting moonshot-v1-8k, moonshot-v1-32k, and moonshot-v1-128k
+  </Card>
+  <Card title="Flexible Configuration" icon="sliders">
+    Extensive customization options including temperature, max tokens, and top-p sampling
+  </Card>
+  <Card title="Streaming Responses" icon="stream">
+    Support for token-by-token streaming for interactive applications
+  </Card>
+  <Card title="Function Calling" icon="function">
+    Register custom Java functions that Moonshot models can intelligently invoke
+  </Card>
+  <Card title="Robust Error Handling" icon="shield-check">
+    Built-in retry mechanism with configurable exponential backoff
+  </Card>
+  <Card title="Observability" icon="chart-line">
+    Integration with Micrometer for metrics collection and performance monitoring
+  </Card>
+</CardGroup>
+
+## Quick Start
+
+### Add Dependency
+
+```xml
+<dependency>
+    <groupId>org.springframework.ai.moonshot</groupId>
+    <artifactId>moonshot-core</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+</dependency>
+```
+
+### Basic Usage
+
+```java
+// Create the Moonshot API client
+MoonshotApi moonshotApi = new MoonshotApi("your-api-key");
+
+// Create the chat model
+MoonshotChatModel chatModel = new MoonshotChatModel(moonshotApi);
+
+// Create a prompt
+UserMessage userMessage = new UserMessage("Tell me a joke about programming");
+Prompt prompt = new Prompt(List.of(userMessage));
+
+// Get the response
+ChatResponse response = chatModel.call(prompt);
+String content = response.getResult().getOutput().getContent();
+System.out.println(content);
+```
+
+## Project Structure
+
+This is a multi-module Maven project:
+
+- **`moonshot-parent`** - Parent POM with dependency management
+- **`moonshot-core`** - Core implementation of the Moonshot AI client
+- **`docs`** - Documentation module built with Antora
+
+## Requirements
+
+- Java 17 or higher
+- Maven 3.6.3 or higher
+
+## Resources
+
+<CardGroup cols={2}>
+  <Card
+    title="GitHub Repository"
+    icon="github"
+    href="https://github.com/spring-ai-community/moonshot"
+  >
+    View source code and contribute
+  </Card>
+  <Card
+    title="Documentation"
+    icon="book"
+    href="https://github.com/spring-ai-community/moonshot#readme"
+  >
+    Full documentation (will be published to GitHub Pages)
+  </Card>
+</CardGroup>
+
+## License
+
+This project is licensed under the [Apache License 2.0](https://github.com/spring-ai-community/moonshot/blob/main/LICENSE).

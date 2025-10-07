@@ -1,0 +1,115 @@
+---
+title: "QianFan"
+description: "Spring AI integration with Baidu's QianFan AI platform"
+---
+
+<img
+  src="https://img.shields.io/badge/Status-Production-green"
+  alt="Production Status"
+/>
+
+## Overview
+
+Spring AI QianFan provides integration with Baidu's QianFan AI platform, offering a comprehensive suite of AI capabilities including chat models, embedding models, and image generation.
+
+## Features
+
+<CardGroup cols={3}>
+  <Card title="Chat Models" icon="messages">
+    Access to QianFan's conversational AI models for building intelligent chatbots and assistants
+  </Card>
+  <Card title="Embedding Models" icon="diagram-project">
+    Generate text embeddings for semantic search and text similarity analysis
+  </Card>
+  <Card title="Image Generation" icon="image">
+    Create AI-generated images using QianFan's CogView model
+  </Card>
+</CardGroup>
+
+## Requirements
+
+- Java 17 or later
+- Maven 3.6+
+- QianFan API credentials (API Key and Secret Key)
+
+## Quick Start
+
+### Add Dependency
+
+<Tabs>
+  <Tab title="Maven">
+    ```xml
+    <dependency>
+        <groupId>org.springframework.ai</groupId>
+        <artifactId>spring-ai-qianfan</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </dependency>
+    ```
+  </Tab>
+  <Tab title="Gradle">
+    ```groovy
+    dependencies {
+        implementation 'org.springframework.ai:spring-ai-qianfan:1.0.0-SNAPSHOT'
+    }
+    ```
+  </Tab>
+</Tabs>
+
+### Configuration
+
+Set your QianFan credentials via environment variables:
+
+```bash
+export SPRING_AI_QIANFAN_API_KEY=<INSERT API KEY HERE>
+export SPRING_AI_QIANFAN_SECRET_KEY=<INSERT SECRET KEY HERE>
+```
+
+Or configure in `application.properties`:
+
+```properties
+spring.ai.qianfan.api-key=YOUR_API_KEY
+spring.ai.qianfan.secret-key=YOUR_SECRET_KEY
+```
+
+## Building from Source
+
+```bash
+# Using Maven
+mvn clean install
+
+# Using Maven wrapper
+./mvnw clean install
+```
+
+### Building Documentation
+
+To build the documentation site:
+
+```bash
+./mvnw -pl docs antora
+```
+
+This will generate the documentation site in `/docs/target/antora/site`.
+
+## Resources
+
+<CardGroup cols={2}>
+  <Card
+    title="GitHub Repository"
+    icon="github"
+    href="https://github.com/spring-ai-community/qianfan"
+  >
+    View source code and contribute
+  </Card>
+  <Card
+    title="Documentation"
+    icon="book"
+    href="https://github.com/spring-ai-community/qianfan#readme"
+  >
+    Full documentation (will be published to GitHub Pages)
+  </Card>
+</CardGroup>
+
+## License
+
+This project is licensed under the Apache License 2.0 - see the [LICENSE](https://github.com/spring-ai-community/qianfan/blob/main/LICENSE) file for details.
