@@ -49,6 +49,7 @@
       "pages": [
         "projects/incubating/spring-ai-agents",
         "projects/incubating/spring-ai-bench",
+        "projects/incubating/spring-ai-tool-search-tool",
         "projects/incubating/mcp-annotations",
         "projects/incubating/mcp-security",
         "projects/incubating/spring-ai-playground",

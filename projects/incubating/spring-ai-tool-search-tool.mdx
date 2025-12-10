@@ -1,0 +1,218 @@
+---
+title: "Spring AI Tool Search Tool"
+description: "Dynamic tool discovery and selection for Spring AI, enabling LLMs to work efficiently with large tool libraries"
+---
+
+<img
+  src="https://img.shields.io/badge/Status-Incubating-blue"
+  alt="Incubating Status"
+/>
+
+[GitHub](https://github.com/spring-ai-community/spring-ai-tool-search-tool) • [Maven](https://central.sonatype.com/repository/maven-snapshots/org/springaicommunity/)
+
+## Overview
+
+As AI agents connect to more services—Slack, GitHub, Jira, MCP servers—tool libraries grow rapidly. A typical multi-server setup can easily have 50+ tools consuming **55,000+ tokens** before any conversation starts. Tool selection accuracy also degrades when models face 30+ similarly-named tools.
+
+**Tool Search Tool** implements [Anthropic's Tool Search Tool pattern](https://www.anthropic.com/engineering/advanced-tool-use) for Spring AI:
+
+- Model receives only a search tool initially (minimal tokens)
+- When capabilities are needed, model searches for relevant tools
+- Matching tool definitions are dynamically expanded into context
+- Model invokes discovered tools to complete the task
+
+**Result:** Significant token savings (80-90%) while maintaining access to thousands of tools.
+
+<img src="https://github.com/spring-io/spring-io-static/blob/main/blog/tzolov/20251208/spring-ai-tool-search-tool-calling-flow.png?raw=true" alt="Tool Search Tool Calling Flow" />
+
+<Note>
+**Version**: 1.0.0-SNAPSHOT
+Maven snapshot artifacts are available from [Maven Central Snapshots](https://central.sonatype.com/repository/maven-snapshots/org/springaicommunity/)
+</Note>
+
+## Key Benefits
+
+<CardGroup cols={2}>
+  <Card
+    title="Token Efficiency"
+    icon="gauge-high"
+  >
+    Reduced context windows with 80-90% token savings
+  </Card>
+  <Card
+    title="Better Accuracy"
+    icon="bullseye"
+  >
+    Models select the right tool when focused on fewer options
+  </Card>
+  <Card
+    title="Portable"
+    icon="rotate"
+  >
+    Works with any LLM supported by Spring AI
+  </Card>
+  <Card
+    title="Observable"
+    icon="eye"
+  >
+    Leverages Spring AI's advisor chain for logging and monitoring
+  </Card>
+</CardGroup>
+
+## Project Structure
+
+```
+spring-ai-tool-search-tool/
+├── tool-search-tool/           # Core advisor implementation
+├── tool-searchers/             # Pluggable search strategies
+│   ├── tool-searcher-vectorstore/   # Semantic search (embeddings)
+│   ├── tool-searcher-lucene/        # Keyword search (full-text)
+│   └── tool-searcher-regex/         # Pattern matching
+├── tool-search-tool-bom/       # Bill of Materials
+└── examples/
+    ├── tool-search-tool-demo/  # Recommended approach
+    └── pre-select-tool-demo/   # Alternative approach
+```
+
+## Search Strategies
+
+| Strategy | Module | Best For |
+|----------|--------|----------|
+| **Semantic** | `tool-searcher-vectorstore` | Natural language queries, fuzzy matching |
+| **Keyword** | `tool-searcher-lucene` | Exact term matching, known tool names |
+| **Regex** | `tool-searcher-regex` | Tool name patterns (`get_*`, `*_api`) |
+
+## How It Works
+
+1. **Indexing**: Tools are indexed in the `ToolSearcher` (not sent to LLM)
+2. **Initial Request**: Only `toolSearchTool` definition is sent to LLM
+3. **Discovery**: LLM calls `toolSearchTool(query="weather")` to find relevant tools
+4. **Expansion**: Discovered tools are added to next request
+5. **Execution**: LLM calls discovered tools to complete the task
+6. **Response**: Final answer generated
+
+## Quick Start
+
+### 1. Add Dependencies
+
+Add the snapshot repository to your `pom.xml`:
+
+```xml
+<repositories>
+    <repository>
+        <id>central-snapshots</id>
+        <url>https://central.sonatype.com/repository/maven-snapshots/</url>
+        <snapshots>
+            <enabled>true</enabled>
+        </snapshots>
+    </repository>
+</repositories>
+```
+
+Then add the dependencies:
+
+```xml
+<dependency>
+    <groupId>org.springaicommunity</groupId>
+    <artifactId>tool-search-tool</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+</dependency>
+
+<!-- Choose a search strategy -->
+<dependency>
+    <groupId>org.springaicommunity</groupId>
+    <artifactId>tool-searcher-lucene</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+</dependency>
+```
+
+### 2. Configure the Advisor
+
+```java
+@Bean
+ToolSearcher toolSearcher() {
+    return new LuceneToolSearcher(0.4f);
+}
+
+@Bean
+CommandLineRunner demo(ChatClient.Builder builder, ToolSearcher toolSearcher) {
+    return args -> {
+        var advisor = ToolSearchToolCallAdvisor.builder()
+            .toolSearcher(toolSearcher)
+            .build();
+
+        ChatClient chatClient = builder
+            .defaultTools(new MyTools())  // 100s of tools - NOT sent to LLM initially
+            .defaultAdvisors(advisor)
+            .build();
+
+        String answer = chatClient
+            .prompt("What's the weather in Amsterdam?")
+            .call()
+            .content();
+    };
+}
+```
+
+## Examples
+
+### Tool Search Tool Demo (Recommended)
+
+LLM actively discovers tools on-demand:
+
+```bash
+cd examples/tool-search-tool-demo
+mvn spring-boot:run
+```
+
+### Pre-Select Tool Demo (Alternative)
+
+Pre-selects tools based on conversation context:
+
+```bash
+cd examples/pre-select-tool-demo
+mvn spring-boot:run
+```
+
+## Requirements
+
+- Java 17+
+- Spring AI 1.1.0-M4+
+- Maven 3.6+
+
+## Resources
+
+<CardGroup cols={2}>
+  <Card
+    title="GitHub Repository"
+    icon="github"
+    href="https://github.com/spring-ai-community/spring-ai-tool-search-tool"
+  >
+    View source code and contribute
+  </Card>
+  <Card
+    title="Anthropic's Tool Search Tool"
+    icon="book"
+    href="https://www.anthropic.com/engineering/advanced-tool-use"
+  >
+    Original pattern documentation
+  </Card>
+  <Card
+    title="Spring AI Tool Calling"
+    icon="leaf"
+    href="https://docs.spring.io/spring-ai/reference/api/tools.html"
+  >
+    Spring AI's tool calling docs
+  </Card>
+  <Card
+    title="Spring AI Advisors"
+    icon="code"
+    href="https://docs.spring.io/spring-ai/reference/api/advisors-recursive.html"
+  >
+    Recursive advisors documentation
+  </Card>
+</CardGroup>
+
+## License
+
+Spring AI Tool Search Tool is Open Source software released under the [Apache 2.0 license](https://github.com/spring-ai-community/spring-ai-tool-search-tool/blob/main/LICENSE.txt).
