@@ -1,40 +1,43 @@
 ---
 title: "Spring AI Playground"
-description: "Self-hosted web UI for AI experimentation and testing"
+description: "Self-hosted web UI for AI experimentation, RAG workflows, and MCP integrations"
 ---
 
 <img
   src="https://img.shields.io/badge/Status-Incubating-blue"
   alt="Incubating Status"
 />
-<img
-  src="https://img.shields.io/badge/Recently_Approved-✓-green"
-  alt="Recently Approved"
-/>
+
+[GitHub](https://github.com/spring-ai-community/spring-ai-playground)
 
 ## Overview
 
-Spring AI Playground is a self-hosted web UI that simplifies AI experimentation and testing. It provides Java developers with an intuitive interface for working with large language models (LLMs), vector databases, prompt engineering, and Model Context Protocol (MCP) integrations.
+**Spring AI Playground** is a self-hosted web UI that simplifies AI experimentation and testing. It provides Java developers with an intuitive interface for working with **large language models (LLMs)**, **vector databases**, **prompt engineering**, and **Model Context Protocol (MCP)** integrations.
 
-Built on Spring AI, it supports leading model providers and includes comprehensive tools for testing retrieval-augmented generation (RAG) workflows and MCP integrations. The goal is to make AI more accessible to developers, helping them quickly prototype Spring AI-based applications with enhanced contextual awareness and external tool capabilities.
+Built on **Spring AI**, it supports leading model providers and includes comprehensive tools for testing **retrieval-augmented generation (RAG)** workflows and MCP integrations. The goal is to make AI more accessible to developers, helping them quickly prototype **Spring AI-based applications** with enhanced contextual awareness and external tool capabilities.
+
+<Note>
+**Version**: Latest from GitHub
+No API keys required when using Ollama - easy to get started!
+</Note>
 
 ## Key Features
 
 <CardGroup cols={3}>
   <Card title="Chat Playground" icon="comments">
-    Unified chat interface powered by Spring AI's ChatClient with dynamic RAG and MCP integration
+    Unified chat interface with dynamic RAG and MCP integration
   </Card>
   <Card title="VectorDB Playground" icon="database">
-    Full RAG flows: upload documents, chunk, embed, search, and inspect retrieval with score details
+    Full RAG flows: upload, chunk, embed, search with score details
   </Card>
   <Card title="MCP Playground" icon="plug">
-    Register, test, and invoke Model Context Protocol tools interactively
+    Register, test, and invoke MCP tools interactively
   </Card>
   <Card title="PWA Support" icon="mobile">
-    Progressive Web App for seamless desktop and mobile experience
+    Progressive Web App for desktop and mobile
   </Card>
   <Card title="Multi-Provider" icon="wand-magic-sparkles">
-    Support for Ollama, OpenAI, and OpenAI-compatible servers
+    Ollama, OpenAI, and OpenAI-compatible servers
   </Card>
   <Card title="Vaadin UI" icon="window">
     Modern, responsive UI built with Vaadin Flow
@@ -45,54 +48,56 @@ Built on Spring AI, it supports leading model providers and includes comprehensi
 
 ### Chat Playground
 
-A unified chat interface powered by Spring AI's ChatClient that can dynamically use configurations from VectorDB and MCP playgrounds, enabling conversations enriched with retrieval and external tools.
+A unified chat interface powered by Spring AI's ChatClient that dynamically uses configurations from VectorDB and MCP playgrounds, enabling conversations enriched with retrieval and external tools.
 
-<img src="/images/projects/spring-ai-playground-chat-mcp.gif" alt="Chat Playground with MCP" />
+<img src="https://raw.githubusercontent.com/spring-ai-community/spring-ai-playground/main/spring-ai-playground-chat-mcp.gif" alt="Chat Playground with MCP" />
 
 ### VectorDB Playground
 
-Supports full RAG flows:
-- Upload and manage documents
-- Chunk and embed content
-- Search vector databases
-- Inspect retrieval results with score details
+<img src="https://raw.githubusercontent.com/spring-ai-community/spring-ai-playground/main/spring-ai-playground-vectordb.gif" alt="VectorDB Playground" />
 
-Implemented using Spring AI's `RetrievalAugmentationAdvisor`.
+Supports full RAG flows with Spring AI's `RetrievalAugmentationAdvisor`:
 
-<img src="/images/projects/spring-ai-playground-vectordb.gif" alt="VectorDB Playground" />
+- **Custom Chunk Input**: Directly input and chunk custom text for embedding
+- **Document Uploads**: Upload PDFs, Word documents, and PowerPoint presentations
+- **Search and Scoring**: Vector similarity searches with similarity scores (0-1)
+- **Filter Expressions**: Metadata-based filtering (e.g., `author == 'John' && year >= 2023`)
 
 ### MCP Playground
 
-Integrates Spring AI's Model Context Protocol, allowing developers to:
-- Register external tools
-- Test tool invocations interactively
-- Monitor tool execution
+<img src="https://raw.githubusercontent.com/spring-ai-community/spring-ai-playground/main/spring-ai-playground-mcp.png" alt="MCP Playground" />
 
-<img src="/images/projects/spring-ai-playground-mcp.png" alt="MCP Playground" />
+Comprehensive Model Context Protocol integration:
+
+- **Connection Management**: Configure MCP connections with STREAMABLE HTTP, STDIO, and SSE transports
+- **MCP Inspector**: Explore available tools with detailed information on arguments and parameters
+- **Interactive Testing**: Execute MCP tools directly with real-time results and execution history
+
+<Note>
+**STREAMABLE HTTP** (MCP v2025-03-26) is a single-endpoint HTTP transport replacing HTTP+SSE. Clients send JSON-RPC via POST to /mcp with optional SSE-style streaming.
+</Note>
 
 ## Supported Technologies
 
 <AccordionGroup>
   <Accordion title="AI Model Providers">
-    - **Ollama** (with tool-enabled models)
-    - **OpenAI** (GPT-3.5, GPT-4, etc.)
-    - **OpenAI-compatible servers** (LM Studio, etc.)
+    - **Ollama** - Local LLM with tool-enabled models
+    - **OpenAI** - GPT-3.5, GPT-4, and more
+    - **OpenAI-compatible servers** - llama.cpp, TabbyAPI, LM Studio
+    - **All Spring AI supported providers** - Anthropic, Google, Amazon, Microsoft
   </Accordion>
 
   <Accordion title="Vector Databases">
-    - PostgreSQL with pgvector
-    - ChromaDB
-    - Milvus
-    - Qdrant
-    - Redis
-    - Other Spring AI supported vector stores
+    All Spring AI VectorStore implementations including:
+    - PostgreSQL/PGVector, ChromaDB, Milvus, Qdrant, Redis
+    - Pinecone, Weaviate, Elasticsearch, MongoDB Atlas
+    - Neo4j, OpenSearch, Oracle, Azure Cosmos DB
   </Accordion>
 
-  <Accordion title="MCP Support">
-    - STDIO transport
-    - SSE (Server-Sent Events) transport
-    - Custom tool registration
-    - Interactive tool testing
+  <Accordion title="MCP Transports">
+    - **STREAMABLE HTTP** - New single-endpoint transport (MCP v2025-03-26)
+    - **STDIO** - Direct process communication (requires local running)
+    - **SSE** - Server-Sent Events transport
   </Accordion>
 </AccordionGroup>
 
@@ -108,7 +113,7 @@ Integrates Spring AI's Model Context Protocol, allowing developers to:
 
 ```bash
 # Clone the repository
-git clone https://github.com/JM-Lab/spring-ai-playground.git
+git clone https://github.com/spring-ai-community/spring-ai-playground.git
 cd spring-ai-playground
 
 # Build Docker image
@@ -121,36 +126,63 @@ docker run -d -p 8282:8282 --name spring-ai-playground \
   -v spring-ai-playground:/home \
   --restart unless-stopped \
   jmlab/spring-ai-playground:latest
-
-# Access the application
-open http://localhost:8282
 ```
+
+Access the application at http://localhost:8282
+
+<Warning>
+**MCP STDIO Transport**: Docker is not suitable for testing MCP STDIO transport as it requires direct process-to-process communication. Use local running instead.
+</Warning>
+
+<Note>
+**Linux Users**: `host.docker.internal` may not be available. Use `--network="host"` or replace with your host machine's IP (e.g., `172.17.0.1`).
+</Note>
 
 ### Running Locally
 
 ```bash
-./mvnw clean install
+./mvnw clean install -Pproduction -DskipTests=true
 ./mvnw spring-boot:run
 ```
 
-## Development Team
+### PWA Installation
 
-- **Jemin Huh** - Project maintainer
+Spring AI Playground supports Progressive Web App installation for a native app-like experience:
+
+1. Open the application at `http://localhost:8282`
+2. Look for the browser's PWA install prompt or the "Install PWA" button
+3. Follow the installation wizard
+
+## Chat Using RAG
+
+1. **Set Up Vector Database**: Upload documents through the VectorDB Playground
+2. **Select Documents**: Choose documents to use as the knowledge base
+3. **Chat**: The system retrieves relevant content and generates knowledge-grounded responses
+
+## Chat Using MCP
+
+1. **Configure MCP Servers**: Set up connections in the MCP Playground
+2. **Select Connections**: Choose MCP connections in the Chat page
+3. **Chat**: The AI automatically uses available MCP tools based on context
+
+<Tip>
+When using Ollama, ensure you're using a **tool-enabled model** that supports function calling. Check [Ollama's Tools category](https://ollama.com/search?c=tools) for compatible models.
+</Tip>
 
 ## Upcoming Features
 
 <Steps>
   <Step title="Spring AI Agent">
-    Enhanced agent abstractions and patterns
+    Build production-ready agents combining MCP, RAG, and Chat in unified workflows
   </Step>
   <Step title="Observability">
-    Comprehensive monitoring and tracing
+    Tools to track and monitor AI performance, usage, and errors
   </Step>
   <Step title="Authentication">
-    User authentication and authorization
+    Login and security features to control access
   </Step>
   <Step title="Multimodal Support">
-    Image and audio processing capabilities
+    Embedding, image, audio, and moderation models
   </Step>
 </Steps>
 
@@ -160,19 +192,19 @@ open http://localhost:8282
   <Card
     title="GitHub Repository"
     icon="github"
-    href="https://github.com/JM-Lab/spring-ai-playground"
+    href="https://github.com/spring-ai-community/spring-ai-playground"
   >
     View source code and contribute
   </Card>
   <Card
-    title="Project Proposal"
-    icon="file-lines"
-    href="https://github.com/spring-ai-community/community/issues/14"
+    title="Spring AI Documentation"
+    icon="leaf"
+    href="https://docs.spring.io/spring-ai/reference/"
   >
-    Original community proposal
+    Spring AI reference documentation
   </Card>
 </CardGroup>
 
 ## License
 
-This project is licensed under the Apache License 2.0.
+Spring AI Playground is Open Source software released under the [Apache 2.0 license](https://github.com/spring-ai-community/spring-ai-playground/blob/main/LICENSE).

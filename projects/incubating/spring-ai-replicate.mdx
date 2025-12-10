@@ -1,0 +1,276 @@
+---
+title: "Spring AI Replicate"
+description: "Spring AI integration for Replicate.com with access to hundreds of AI models"
+---
+
+<img
+  src="https://img.shields.io/badge/Status-Incubating-blue"
+  alt="Incubating Status"
+/>
+
+[GitHub](https://github.com/spring-ai-community/spring-ai-replicate) • [Replicate.com](https://replicate.com)
+
+## Overview
+
+This project provides Spring AI integration for [Replicate.com](https://replicate.com), enabling access to **hundreds of AI models** for text generation, image/video/audio generation, embeddings, classification, and more.
+
+Replicate hosts a wide variety of AI models with varying input/output schemas. Rather than creating model-specific implementations, this integration provides **four flexible adapter models** that work with any Replicate model:
+
+<CardGroup cols={2}>
+  <Card title="ReplicateChatModel" icon="comments">
+    Conversational LLMs (Claude, GPT, Llama, Grok, etc.)
+  </Card>
+  <Card title="ReplicateMediaModel" icon="image">
+    Media generation (images, video, audio)
+  </Card>
+  <Card title="ReplicateStringModel" icon="font">
+    String outputs (classifiers, detectors)
+  </Card>
+  <Card title="ReplicateStructuredModel" icon="code">
+    Structured outputs (embeddings, JSON responses)
+  </Card>
+</CardGroup>
+
+<Note>
+**Version**: 1.0.0-SNAPSHOT
+Maven snapshot artifacts are available from [Maven Central Snapshots](https://central.sonatype.com/repository/maven-snapshots/org/springaicommunity/)
+</Note>
+
+## Project Structure
+
+```
+spring-ai-replicate/
+├── spring-ai-replicate/                         # API, Models and Options
+├── spring-ai-replicate-spring-boot-autoconfigure/   # Autoconfiguration
+└── spring-ai-replicate-spring-boot-starter/     # Starter Dependency
+```
+
+## Quick Start
+
+### Add Dependency
+
+```xml
+<dependency>
+    <groupId>org.springaicommunity</groupId>
+    <artifactId>spring-ai-replicate-spring-boot-starter</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+</dependency>
+```
+
+### Configure Models
+
+Configure via `application.properties`:
+
+```properties
+# API Token
+spring.ai.replicate.api-token=REPLICATE_TOKEN
+
+# Polling interval for async operations
+spring.ai.replicate.retry-fixed-backoff=1000ms
+
+# Chat model (LLMs)
+spring.ai.replicate.chat.options.model=meta/meta-llama-3-8b-instruct
+spring.ai.replicate.chat.options.input.temperature=0.7
+spring.ai.replicate.chat.options.input.max_tokens=500
+
+# Media model (image/video/audio generation)
+spring.ai.replicate.media.options.model=black-forest-labs/flux-schnell
+spring.ai.replicate.media.options.input.num_outputs=2
+
+# String model (classification/detection)
+spring.ai.replicate.string.options.model=falcons-ai/nsfw_image_detection
+
+# Structured model (embeddings)
+spring.ai.replicate.structured.options.model=openai/clip
+```
+
+All model beans are automatically created and available for injection.
+
+## Usage Examples
+
+### Chat Model (Conversational AI)
+
+```java
+@RestController
+class ChatController {
+    @Autowired
+    private ReplicateChatModel chatModel;
+
+    @GetMapping("/chat")
+    public String chat(@RequestParam String message) {
+        return chatModel.call(message);
+    }
+}
+```
+
+**Streaming support:**
+
+```java
+public void streamingChat() {
+    Flux<ChatResponse> responseFlux = chatModel.stream(
+        new Prompt("Count from 1 to 100")
+    );
+
+    responseFlux.subscribe(chatResponse -> {
+        String chunk = chatResponse.getResult().getOutput().getText();
+        System.out.print(chunk);
+    });
+}
+```
+
+### Media Model (Image/Video/Audio Generation)
+
+```java
+@Autowired
+private ReplicateMediaModel mediaModel;
+
+public void generateImages() {
+    ReplicateOptions options = ReplicateOptions.builder()
+        .model("black-forest-labs/flux-schnell")
+        .withParameter("prompt", "a cat sitting on a laptop")
+        .withParameter("num_outputs", 2)
+        .build();
+
+    MediaResponse response = mediaModel.generate(options);
+
+    List<String> imageUrls = response.getUris();
+    imageUrls.forEach(url -> System.out.println("Image URL: " + url));
+}
+```
+
+### String Model (Classification/Detection)
+
+Two ways to upload resources to Replicate:
+
+**File Upload:**
+```java
+@Autowired
+private ReplicateStringModel stringModel;
+
+@Autowired
+private ReplicateApi replicateApi;
+
+public void classifyImage() {
+    FileSystemResource fileResource = new FileSystemResource(
+        Paths.get("path/to/image.jpg")
+    );
+    FileUploadResponse uploadResponse = replicateApi.uploadFile(
+        fileResource, "image.jpg"
+    );
+    String imageUrl = uploadResponse.urls().get();
+
+    ReplicateOptions options = ReplicateOptions.builder()
+        .model("falcons-ai/nsfw_image_detection")
+        .withParameter("image", imageUrl)
+        .build();
+
+    StringResponse response = stringModel.generate(options);
+    System.out.println("Classification: " + response.getOutput());
+}
+```
+
+**Base64 Encoding:**
+```java
+public void classifyWithBase64() {
+    byte[] imageBytes = Files.readAllBytes(Paths.get("path/to/image.jpg"));
+    String base64Image = "data:application/octet-stream;base64,"
+        + Base64.getEncoder().encodeToString(imageBytes);
+
+    ReplicateOptions options = ReplicateOptions.builder()
+        .model("falcons-ai/nsfw_image_detection")
+        .withParameter("image", base64Image)
+        .build();
+
+    StringResponse response = stringModel.generate(options);
+}
+```
+
+### Structured Model (Embeddings)
+
+```java
+@Autowired
+private ReplicateStructuredModel structuredModel;
+
+public void generateEmbeddings() {
+    ReplicateOptions options = ReplicateOptions.builder()
+        .model("openai/clip")
+        .withParameter("text", "spring ai framework")
+        .build();
+
+    StructuredResponse response = structuredModel.generate(options);
+    Map<String, Object> rawOutput = response.getOutput();
+    MyClass output = objectMapper.convertValue(rawOutput, MyClass.class);
+}
+```
+
+## Per-Request Options
+
+Override configuration on a per-request basis:
+
+```java
+public void chatWithOptions() {
+    ReplicateChatOptions options = ReplicateChatOptions.builder()
+        .model("meta/meta-llama-3-8b-instruct")
+        .withParameter("temperature", 0.8)
+        .withParameter("max_tokens", 100)
+        .build();
+
+    Prompt prompt = new Prompt("Tell me a joke", options);
+    ChatResponse response = chatModel.call(prompt);
+
+    System.out.println(response.getResult().getOutput().getText());
+    System.out.println("Tokens used: " +
+        response.getMetadata().getUsage().getTotalTokens());
+}
+```
+
+<Note>
+**Chat Model Options**: Use `ReplicateChatOptions` for chat models to integrate with Spring AI conventions. Other models use `ReplicateOptions`.
+</Note>
+
+## Important Notes
+
+<Warning>
+**Multi-turn Conversations**: The current implementation does not support multi-turn conversations with conversation history. Each call is independent due to varying model schemas.
+</Warning>
+
+### Model Discovery
+
+Visit [Replicate.com/explore](https://replicate.com/explore) to discover available models. Each model has different input parameters - check the model's documentation for specific requirements.
+
+## Resources
+
+<CardGroup cols={2}>
+  <Card
+    title="GitHub Repository"
+    icon="github"
+    href="https://github.com/spring-ai-community/spring-ai-replicate"
+  >
+    View source code and contribute
+  </Card>
+  <Card
+    title="Replicate Models"
+    icon="magnifying-glass"
+    href="https://replicate.com/explore"
+  >
+    Explore hundreds of available AI models
+  </Card>
+  <Card
+    title="Spring AI Documentation"
+    icon="leaf"
+    href="https://docs.spring.io/spring-ai/reference/"
+  >
+    Spring AI reference documentation
+  </Card>
+  <Card
+    title="Replicate Documentation"
+    icon="book"
+    href="https://replicate.com/docs"
+  >
+    Replicate API documentation
+  </Card>
+</CardGroup>
+
+## License
+
+Spring AI Replicate is Open Source software released under the [Apache 2.0 license](https://github.com/spring-ai-community/spring-ai-replicate/blob/main/LICENSE).
