@@ -1,0 +1,147 @@
+---
+title: "Spring AI Bedrock AgentCore"
+description: "Spring Boot starter for AWS Bedrock AgentCore Runtime integration"
+---
+
+<img
+  src="https://img.shields.io/badge/Status-Incubating-blue"
+  alt="Incubating Status"
+/>
+
+[GitHub](https://github.com/spring-ai-community/spring-ai-bedrock-agentcore)
+
+## Overview
+
+A Spring Boot starter that enables existing Spring Boot applications to conform to the AWS Bedrock AgentCore Runtime contract with minimal configuration. Simply add the dependency and annotate your agent methods.
+
+<Note>
+**Version**: 1.0.0-RC1
+</Note>
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Auto-configuration" icon="gear">
+    Automatically sets up AgentCore endpoints when added as dependency
+  </Card>
+  <Card title="Annotation-based" icon="at">
+    Simple `@AgentCoreInvocation` annotation to mark agent methods
+  </Card>
+  <Card title="SSE Streaming" icon="wave-pulse">
+    Server-Sent Events support with `Flux<String>` return types
+  </Card>
+  <Card title="Health Checks" icon="heart-pulse">
+    Built-in `/ping` endpoint with Spring Boot Actuator integration
+  </Card>
+  <Card title="Async Task Tracking" icon="list-check">
+    Convenient methods for background task tracking
+  </Card>
+  <Card title="Rate Limiting" icon="gauge">
+    Built-in Bucket4j throttling for invocations and ping endpoints
+  </Card>
+</CardGroup>
+
+## Quick Start
+
+### 1. Add Dependency
+
+```xml
+<dependency>
+    <groupId>org.springaicommunity</groupId>
+    <artifactId>spring-ai-bedrock-agentcore-starter</artifactId>
+    <version>1.0.0-RC1</version>
+</dependency>
+```
+
+### 2. Create Agent Method
+
+```java
+@Service
+public class MyAgentService {
+
+    @AgentCoreInvocation
+    public String handleUserPrompt(MyRequest request) {
+        return "You said: " + request.prompt;
+    }
+}
+```
+
+### 3. Run Application
+
+The application will automatically expose:
+- `POST /invocations` - Agent processing endpoint
+- `GET /ping` - Health check endpoint
+
+## Supported Method Signatures
+
+### Basic POJO Method
+
+```java
+@AgentCoreInvocation
+public MyResponse processRequest(MyRequest request) {
+    return new MyResponse("Processed: " + request.prompt());
+}
+
+record MyRequest(String prompt) {}
+record MyResponse(String message) {}
+```
+
+### With AgentCore Context
+
+```java
+@AgentCoreInvocation
+public MyResponse processWithContext(MyRequest request, AgentCoreContext context) {
+    var sessionId = context.getHeader(AgentCoreHeaders.SESSION_ID);
+    return new MyResponse("Session " + sessionId + ": " + request.prompt());
+}
+```
+
+### SSE Streaming with Spring AI
+
+```java
+@AgentCoreInvocation
+public Flux<String> streamingAgent(String prompt) {
+    return chatClient.prompt().user(prompt).stream().content();
+}
+```
+
+## Background Task Tracking
+
+AWS Bedrock AgentCore Runtime monitors agent health and may shut down agents that appear idle. Use `AgentCoreTaskTracker` to communicate active work:
+
+```java
+@AgentCoreInvocation
+public String asyncTaskHandling(MyRequest request, AgentCoreContext context) {
+    agentCoreTaskTracker.increment();  // Starting background work
+
+    CompletableFuture.runAsync(() -> {
+        // Long-running background work
+    }).thenRun(agentCoreTaskTracker::decrement);  // Work completed
+
+    return "Task started";
+}
+```
+
+The `/ping` endpoint returns **HealthyBusy** while tasks are active, preventing premature shutdown.
+
+## Configuration
+
+```properties
+# Customize rate limits in requests per minute (optional)
+agentcore.throttle.invocations-limit=50
+agentcore.throttle.ping-limit=200
+```
+
+## Examples
+
+See the `examples/` directory in the repository:
+
+- **`simple-spring-boot-app/`** - Minimal AgentCore agent with async task tracking
+- **`spring-ai-sse-chat-client/`** - SSE streaming with Spring AI and Amazon Bedrock
+- **`spring-ai-simple-chat-client/`** - Traditional Spring AI integration
+- **`spring-ai-override-invocations/`** - Custom controller override using marker interfaces
+
+## Requirements
+
+- Java 17+
+- Spring Boot 3.x

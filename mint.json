@@ -48,6 +48,7 @@
       "group": "Incubating Projects",
       "pages": [
         "projects/incubating/spring-ai-agents",
+        "projects/incubating/spring-ai-bedrock-agentcore",
         "projects/incubating/spring-ai-bench",
         "projects/incubating/spring-ai-playground",
         "projects/incubating/spring-ai-replicate",
