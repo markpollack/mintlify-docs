@@ -1,0 +1,8 @@
+# Planning documents (internal only)
+plans/
+
+# OS files
+.DS_Store
+
+# Node modules (if any)
+node_modules/
