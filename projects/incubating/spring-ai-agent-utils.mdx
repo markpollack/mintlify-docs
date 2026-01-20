@@ -1,0 +1,316 @@
+---
+title: "Spring AI Agent Utils"
+description: "Claude Code-inspired tools and agent skills for Spring AI applications"
+---
+
+<img
+  src="https://img.shields.io/badge/Status-Incubating-blue"
+  alt="Incubating Status"
+/>
+
+[GitHub](https://github.com/spring-ai-community/spring-ai-agent-utils) • [Maven Central](https://central.sonatype.com/artifact/org.springaicommunity/spring-ai-agent-utils)
+
+## Overview
+
+Spring AI Agent Utils brings [Claude Code](https://code.claude.com/docs/en/overview)-inspired tools and agent skills to Spring AI applications. This library reimplements core Claude Code capabilities as Spring AI tools, enabling sophisticated agentic workflows with file operations, shell execution, web access, task management, and extensible agent skills.
+
+<Note>
+**Version**: 0.4.0 • Requires Spring AI 2.0.0-SNAPSHOT or 2.0.0-M2
+</Note>
+
+## Tool Categories
+
+<CardGroup cols={2}>
+  <Card title="File System Tools" icon="folder">
+    Read, write, and edit files with precise control
+  </Card>
+  <Card title="Shell Tools" icon="terminal">
+    Execute commands with timeout, background processes, and output filtering
+  </Card>
+  <Card title="Search Tools" icon="magnifying-glass">
+    Grep and Glob for fast code search and file pattern matching
+  </Card>
+  <Card title="Web Tools" icon="globe">
+    AI-powered web fetch with caching and Brave search integration
+  </Card>
+  <Card title="Task Management" icon="list-check">
+    Todo tracking and multi-agent task orchestration
+  </Card>
+  <Card title="Sub-Agent System" icon="diagram-project">
+    Extensible sub-agents with A2A protocol support
+  </Card>
+  <Card title="Agent Skills" icon="wand-magic-sparkles">
+    Reusable knowledge modules in Markdown with YAML front-matter
+  </Card>
+</CardGroup>
+
+## Quick Start
+
+### Add Dependency
+
+```xml
+<dependency>
+    <groupId>org.springaicommunity</groupId>
+    <artifactId>spring-ai-agent-utils</artifactId>
+    <version>0.4.0</version>
+</dependency>
+```
+
+### Configure Your Agent
+
+```java
+ChatClient chatClient = chatClientBuilder
+    // System prompt with environment context
+    .defaultSystem(p -> p.text(agentSystemPrompt)
+        .param(AgentEnvironment.ENVIRONMENT_INFO_KEY, AgentEnvironment.info())
+        .param(AgentEnvironment.GIT_STATUS_KEY, AgentEnvironment.gitStatus()))
+
+    // Core Tools
+    .defaultTools(
+        ShellTools.builder().build(),
+        FileSystemTools.builder().build(),
+        GrepTool.builder().build(),
+        GlobTool.builder().build(),
+        SmartWebFetchTool.builder(chatClient).build(),
+        BraveWebSearchTool.builder(braveApiKey).build())
+
+    // Task Management
+    .defaultTools(TodoWriteTool.builder().build())
+
+    // Skills System
+    .defaultToolCallbacks(SkillsTool.builder()
+        .addSkillsDirectory(".claude/skills")
+        .build())
+
+    // Sub-Agents
+    .defaultToolCallbacks(TaskToolCallbackProvider.builder()
+        .chatClientBuilder("default", chatClientBuilder.clone())
+        .subagentReferences(ClaudeSubagentReferences.fromRootDirectory(".claude/agents"))
+        .build())
+
+    .build();
+```
+
+## Core Tools
+
+### FileSystemTools
+
+Read, write, and edit files with precise control:
+
+```java
+FileSystemTools.builder()
+    .allowedPaths(List.of("/project"))  // Restrict access
+    .build();
+```
+
+Operations: `readFile`, `writeFile`, `editFile`, `listDirectory`
+
+### ShellTools
+
+Execute shell commands with timeout control and background process management:
+
+```java
+ShellTools.builder()
+    .defaultTimeout(Duration.ofMinutes(2))
+    .allowBackgroundProcesses(true)
+    .build();
+```
+
+Features: timeout control, background execution, regex output filtering
+
+### GrepTool
+
+Pure Java grep implementation for code search:
+
+```java
+GrepTool.builder()
+    .maxResults(100)
+    .build();
+```
+
+Features: regex patterns, glob filtering, multiple output modes (content, files, count)
+
+### GlobTool
+
+Fast file pattern matching:
+
+```java
+GlobTool.builder().build();
+```
+
+Supports patterns like `**/*.java`, `src/**/*.ts`
+
+### SmartWebFetchTool
+
+AI-powered web content summarization with caching:
+
+```java
+SmartWebFetchTool.builder(chatClient)
+    .cacheDuration(Duration.ofMinutes(15))
+    .build();
+```
+
+### BraveWebSearchTool
+
+Web search with domain filtering:
+
+```java
+BraveWebSearchTool.builder(braveApiKey)
+    .maxResults(10)
+    .build();
+```
+
+## User Interaction
+
+### AskUserQuestionTool
+
+Ask users clarifying questions during agent execution:
+
+```java
+AskUserQuestionTool.builder()
+    .questionHandler(questions -> {
+        // Display questions to user, collect answers
+        return answers;
+    })
+    .build();
+```
+
+Supports multiple-choice options and free-form input.
+
+## Task Management
+
+### TodoWriteTool
+
+Structured task management with state tracking:
+
+```java
+TodoWriteTool.builder().build();
+```
+
+Track tasks with states: `pending`, `in_progress`, `completed`
+
+### TaskTools (Sub-Agents)
+
+Extensible sub-agent system for delegating complex tasks to specialized agents:
+
+```java
+TaskToolCallbackProvider.builder()
+    .chatClientBuilder("default", chatClientBuilder)
+    .chatClientBuilder("haiku", haikuBuilder)  // Multi-model support
+    .subagentReferences(ClaudeSubagentReferences.fromRootDirectory(".claude/agents"))
+    .skillsDirectories(".claude/skills")
+    .build();
+```
+
+**Features:**
+- **Multi-model routing** - Use different models for different sub-agents
+- **Pluggable backends** - Claude-style, A2A protocol, or custom implementations
+- **Background task execution** - Run sub-agents asynchronously
+- **Task output retrieval** - Get results from background tasks
+
+### A2A Protocol Support
+
+The sub-agent architecture supports the [A2A (Agent-to-Agent) protocol](https://github.com/a2aprotocol/a2a-spec) for interoperability with external agents:
+
+```java
+// Custom A2A subagent integration (see subagent-demo example)
+public class A2ASubagentExecutor implements SubagentExecutor {
+    @Override
+    public String execute(TaskCall taskCall, SubagentDefinition subagent) {
+        AgentCard agentCard = ((A2ASubagentDefinition) subagent).getAgentCard();
+        // Send message via A2A protocol
+        Client client = Client.builder(agentCard)
+            .withTransport(JSONRPCTransport.class, config)
+            .build();
+        client.sendMessage(message);
+        // ...
+    }
+}
+```
+
+The extensible architecture uses three interfaces:
+- `SubagentResolver` - Discovers and loads sub-agent definitions
+- `SubagentExecutor` - Executes tasks on sub-agents
+- `SubagentDefinition` - Describes a sub-agent's capabilities
+
+## Agent Skills
+
+Extend AI capabilities with reusable knowledge modules:
+
+```markdown
+---
+name: code-review
+description: Reviews code for best practices
+tools: [FileSystemTools, GrepTool]
+---
+
+# Code Review Skill
+
+When reviewing code, check for:
+1. Security vulnerabilities
+2. Performance issues
+3. Code style consistency
+...
+```
+
+Load skills from directories:
+
+```java
+SkillsTool.builder()
+    .addSkillsDirectory(".claude/skills")
+    .addSkillsDirectory("/shared/skills")
+    .build();
+```
+
+## AgentEnvironment
+
+Dynamic context utility for system prompts:
+
+```java
+.defaultSystem(p -> p.text(systemPrompt)
+    .param(AgentEnvironment.ENVIRONMENT_INFO_KEY, AgentEnvironment.info())
+    .param(AgentEnvironment.GIT_STATUS_KEY, AgentEnvironment.gitStatus())
+    .param(AgentEnvironment.AGENT_MODEL_KEY, "claude-sonnet-4-5")
+    .param(AgentEnvironment.AGENT_MODEL_KNOWLEDGE_CUTOFF_KEY, "2025-01-01"))
+```
+
+Provides: working directory, platform info, git status, model information
+
+## Examples
+
+| Example | Description |
+|---------|-------------|
+| `code-agent-demo` | Full-featured AI coding assistant with interactive CLI |
+| `todo-demo` | Task management with TodoWriteTool and progress tracking |
+| `subagent-demo` | Extensible sub-agent system with A2A protocol integration |
+| `skills-demo` | Custom skill development with SkillsTool |
+| `ask-user-question-demo` | Interactive agent-user communication |
+
+## Requirements
+
+- Java 17+
+- Spring Boot 3.x / 4.x
+- Spring AI 2.0.0-SNAPSHOT or 2.0.0-M2
+
+## Resources
+
+<CardGroup cols={2}>
+  <Card
+    title="GitHub Repository"
+    icon="github"
+    href="https://github.com/spring-ai-community/spring-ai-agent-utils"
+  >
+    Source code, examples, and detailed documentation
+  </Card>
+  <Card
+    title="Claude Code Docs"
+    icon="book"
+    href="https://code.claude.com/docs/en/overview"
+  >
+    Original Claude Code documentation (inspiration)
+  </Card>
+</CardGroup>
+
+## License
+
+This project is licensed under the [Apache License 2.0](https://github.com/spring-ai-community/spring-ai-agent-utils/blob/main/LICENSE.txt).

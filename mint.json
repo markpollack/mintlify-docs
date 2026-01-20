@@ -121,6 +121,7 @@
         },
         "projects/incubating/agent-judge",
         "projects/incubating/agent-sandbox",
+        "projects/incubating/spring-ai-agent-utils",
         "projects/incubating/spring-ai-agents",
         "projects/incubating/spring-ai-bedrock-agentcore",
         "projects/incubating/spring-ai-bench",
