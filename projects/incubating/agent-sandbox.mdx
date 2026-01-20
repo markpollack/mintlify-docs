@@ -1,0 +1,462 @@
+---
+title: "Agent Sandbox"
+description: "Isolated command execution API - Local, Docker, and E2B cloud backends"
+---
+
+<img
+  src="https://img.shields.io/badge/Status-Incubating-blue"
+  alt="Incubating Status"
+/>
+
+[GitHub](https://github.com/spring-ai-community/agent-sandbox) • [Maven Central](https://central.sonatype.com/search?q=org.springaicommunity.sandbox)
+
+## Overview
+
+Agent Sandbox provides a **unified API for isolated command execution** across multiple backends. Whether you need local process isolation, Docker container security, or cloud-based E2B microVMs, the same interface works everywhere.
+
+The library emphasizes clean design: interface segregation (separate concerns for execution vs file operations), Liskov substitution (backends are interchangeable), and a JDK 21 baseline for modern Java features.
+
+## Core API
+
+<CardGroup cols={2}>
+  <Card
+    title="Sandbox"
+    icon="box"
+  >
+    Main interface for isolated command execution with workspace management
+  </Card>
+  <Card
+    title="ExecSpec"
+    icon="terminal"
+  >
+    Command specification with timeout, environment, and shell support
+  </Card>
+  <Card
+    title="ExecResult"
+    icon="clipboard-list"
+  >
+    Execution result with exit code, stdout, stderr, and utilities
+  </Card>
+  <Card
+    title="SandboxFiles"
+    icon="folder"
+  >
+    Fluent API for file operations within the sandbox workspace
+  </Card>
+</CardGroup>
+
+## Module Structure
+
+| Module | Description | Dependencies |
+|--------|-------------|--------------|
+| `agent-sandbox-core` | Core Sandbox API and LocalSandbox | zt-exec |
+| `agent-sandbox-docker` | Docker container sandbox | testcontainers |
+| `agent-sandbox-e2b` | E2B cloud microVM sandbox | jackson, awaitility |
+| `agent-sandbox-bom` | Bill of Materials | N/A |
+
+## Implementations
+
+<CardGroup cols={3}>
+  <Card
+    title="LocalSandbox"
+    icon="laptop"
+  >
+    Local process execution using zt-exec. Fast, no isolation overhead.
+  </Card>
+  <Card
+    title="DockerSandbox"
+    icon="docker"
+  >
+    Container-based isolation using Testcontainers. Full filesystem/network isolation.
+  </Card>
+  <Card
+    title="E2BSandbox"
+    icon="cloud"
+  >
+    Cloud microVM execution via E2B. Maximum isolation with MCP support.
+  </Card>
+</CardGroup>
+
+## Quick Start
+
+### Maven Dependency
+
+```xml
+<dependency>
+    <groupId>org.springaicommunity.sandbox</groupId>
+    <artifactId>agent-sandbox-core</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+</dependency>
+```
+
+### Basic Execution
+
+```java
+try (Sandbox sandbox = LocalSandbox.builder()
+        .tempDirectory("test-")
+        .build()) {
+
+    ExecResult result = sandbox.exec(ExecSpec.of("echo", "Hello"));
+
+    if (result.success()) {
+        System.out.println(result.stdout());  // "Hello"
+    }
+}
+```
+
+## Sandbox Interface
+
+```java
+public interface Sandbox extends AutoCloseable {
+    ExecResult exec(ExecSpec spec);              // Execute command
+    Process startInteractive(ExecSpec spec);    // Start interactive process
+    Path workDir();                              // Get working directory
+    SandboxFiles files();                        // Access file operations
+    boolean isClosed();                          // Check if closed
+    boolean shouldCleanupOnClose();              // Auto-delete on close?
+}
+```
+
+## ExecSpec (Command Specification)
+
+Build command specifications with fluent API:
+
+```java
+// Simple command
+ExecSpec spec = ExecSpec.of("mvn", "test");
+
+// Full builder
+ExecSpec spec = ExecSpec.builder()
+    .command("java", "-jar", "app.jar")
+    .env("JAVA_OPTS", "-Xmx512m")
+    .env("DEBUG", "true")
+    .timeout(Duration.ofMinutes(5))
+    .build();
+
+// Shell command (platform-aware: bash -c on Unix, cmd /c on Windows)
+ExecSpec spec = ExecSpec.builder()
+    .shellCommand("echo $HOME && ls -la")
+    .timeout(Duration.ofSeconds(30))
+    .build();
+
+// Modify existing spec
+ExecSpec modified = spec.toBuilder()
+    .timeout(Duration.ofMinutes(10))
+    .build();
+```
+
+## ExecResult (Execution Result)
+
+Rich result object with utilities for AI analysis:
+
+```java
+ExecResult result = sandbox.exec(spec);
+
+// Basic properties
+int exitCode = result.exitCode();
+String stdout = result.stdout();
+String stderr = result.stderr();
+Duration duration = result.duration();
+
+// Convenience methods
+boolean ok = result.success();           // exitCode == 0
+boolean failed = result.failed();        // exitCode != 0
+
+// Output utilities
+String merged = result.mergedLog();      // stdout + stderr (for LLM analysis)
+boolean hasOut = result.hasOutput();     // stdout or stderr non-empty
+boolean hasStdout = result.hasStdout();
+boolean hasStderr = result.hasStderr();
+int length = result.outputLength();      // Combined length
+
+// Logging-friendly summary (no full output)
+String summary = result.summary();       // "ExecResult[exitCode=0, duration=PT1.234S]"
+```
+
+## SandboxFiles (File Operations)
+
+Fluent API for file management with `.and()` to chain back to sandbox:
+
+```java
+try (Sandbox sandbox = LocalSandbox.create()) {
+    // Create files and directories
+    sandbox.files()
+        .create("pom.xml", pomContent)
+        .create("src/main/java/App.java", sourceCode)
+        .createDirectory("target")
+        .and()  // Return to Sandbox
+        .exec(ExecSpec.of("mvn", "compile"));
+
+    // Read files
+    String content = sandbox.files().read("target/output.txt");
+
+    // Check existence
+    boolean exists = sandbox.files().exists("target/classes/App.class");
+
+    // Delete files
+    sandbox.files()
+        .delete("target/temp.txt")
+        .delete("target/generated", true);  // recursive
+
+    // List directory contents
+    List<FileEntry> entries = sandbox.files().list("src");
+    List<FileEntry> deep = sandbox.files().list("src", 3);  // maxDepth=3
+}
+```
+
+### Batch File Setup
+
+```java
+List<FileSpec> files = List.of(
+    FileSpec.of("pom.xml", pomContent),
+    FileSpec.of("src/main/java/App.java", code),
+    FileSpec.of("README.md", docs)
+);
+
+sandbox.files().setup(files);
+```
+
+### FileEntry (File Metadata)
+
+```java
+List<FileEntry> entries = sandbox.files().list("src");
+for (FileEntry entry : entries) {
+    String name = entry.name();              // Filename
+    String path = entry.path();              // Relative path
+    FileType type = entry.type();            // FILE or DIRECTORY
+    long size = entry.size();                // Bytes (0 for dirs)
+    Instant modified = entry.modifiedTime(); // Last modified
+
+    if (entry.isFile()) {
+        String content = sandbox.files().read(entry.path());
+    }
+}
+```
+
+## ExecSpecCustomizer
+
+Inject cross-cutting concerns (auth, logging, etc.) before every execution:
+
+```java
+// Add authentication to all commands
+ExecSpecCustomizer addAuth = spec -> spec.toBuilder()
+    .env("AUTH_TOKEN", System.getenv("TOKEN"))
+    .build();
+
+// Conditional customization
+ExecSpecCustomizer debugMode = ExecSpecCustomizer.when(
+    spec -> spec.command().contains("test"),
+    spec -> spec.toBuilder().env("DEBUG", "true").build()
+);
+
+// Chain multiple customizers
+ExecSpecCustomizer combined = ExecSpecCustomizer.chain(addAuth, debugMode);
+
+// Apply to sandbox
+LocalSandbox sandbox = LocalSandbox.builder()
+    .customizer(combined)
+    .build();
+```
+
+## LocalSandbox
+
+Fast local execution without container overhead:
+
+```java
+// Use current directory
+try (Sandbox sandbox = LocalSandbox.create()) {
+    sandbox.exec(ExecSpec.of("ls", "-la"));
+}
+
+// Use specific directory
+try (Sandbox sandbox = new LocalSandbox(Path.of("/project"))) {
+    sandbox.exec(ExecSpec.of("mvn", "test"));
+}
+
+// Builder with temp directory (auto-cleanup)
+try (Sandbox sandbox = LocalSandbox.builder()
+        .tempDirectory("myapp-")
+        .withFile("config.json", configContent)
+        .withFiles(List.of(
+            FileSpec.of("src/App.java", code),
+            FileSpec.of("pom.xml", pom)
+        ))
+        .customizer(myCustomizer)
+        .build()) {
+    sandbox.exec(ExecSpec.of("mvn", "compile"));
+}
+// Temp directory deleted on close
+```
+
+### Interactive Processes
+
+For bidirectional I/O (stdin/stdout streaming):
+
+```java
+Process proc = sandbox.startInteractive(ExecSpec.of("bash"));
+try {
+    proc.getOutputStream().write("echo hello\n".getBytes());
+    proc.getOutputStream().flush();
+    // Read from proc.getInputStream()
+} finally {
+    proc.destroy();
+}
+```
+
+## DockerSandbox
+
+Container isolation for untrusted code:
+
+```java
+// Default image
+try (Sandbox sandbox = DockerSandbox.create()) {
+    sandbox.exec(ExecSpec.of("python", "--version"));
+}
+
+// Custom image
+try (Sandbox sandbox = DockerSandbox.builder()
+        .image("maven:3.9-eclipse-temurin-21")
+        .withFile("pom.xml", pomContent)
+        .customizer(myCustomizer)
+        .build()) {
+    ExecResult result = sandbox.exec(ExecSpec.of("mvn", "test"));
+}
+```
+
+Default image: `ghcr.io/spring-ai-community/agents-runtime:latest`
+
+Working directory: `/work`
+
+## E2BSandbox
+
+Cloud-based Firecracker microVM for maximum isolation:
+
+```java
+// Basic usage (uses E2B_API_KEY env var)
+try (Sandbox sandbox = E2BSandbox.builder()
+        .template("base")
+        .timeout(Duration.ofMinutes(2))
+        .build()) {
+    ExecResult result = sandbox.exec(ExecSpec.of("python", "script.py"));
+}
+
+// Full configuration
+try (Sandbox sandbox = E2BSandbox.builder("your-api-key")
+        .template("python-3.11")
+        .timeout(Duration.ofMinutes(5))
+        .env("API_KEY", "secret")          // Sandbox-level env
+        .env(Map.of("DEBUG", "true"))
+        .withFile("script.py", code)
+        .build()) {
+    sandbox.exec(ExecSpec.of("python", "script.py"));
+}
+```
+
+Working directory: `/home/user`
+
+### Session Reconnection
+
+Reconnect to existing E2B sandbox for persistent sessions:
+
+```java
+// Create and get sandbox ID
+E2BSandbox sandbox = E2BSandbox.builder().build();
+String sandboxId = sandbox.getSandboxId();
+sandbox.close();
+
+// Later: reconnect to same sandbox
+try (Sandbox reconnected = E2BSandbox.connect(sandboxId)) {
+    // Files and state preserved
+    reconnected.exec(ExecSpec.of("ls", "-la"));
+}
+```
+
+<Note>
+E2B sandboxes support MCP (Model Context Protocol) for AI agent integration. See the [E2B documentation](https://e2b.dev/docs) for details.
+</Note>
+
+## Exceptions
+
+```java
+try {
+    sandbox.exec(ExecSpec.builder()
+        .command("long-running-task")
+        .timeout(Duration.ofSeconds(5))
+        .build());
+} catch (TimeoutException e) {
+    Duration timeout = e.getTimeout();  // The timeout that was exceeded
+    // Handle timeout
+} catch (SandboxException e) {
+    // General sandbox errors (I/O, process failures, etc.)
+}
+```
+
+## Design Principles
+
+<AccordionGroup>
+  <Accordion title="Interface Segregation">
+    The `Sandbox` interface focuses on command execution, while `SandboxFiles` handles file operations. This separation allows implementations to optimize each concern independently.
+
+    ```java
+    // Execution
+    ExecResult result = sandbox.exec(spec);
+
+    // File operations via accessor
+    sandbox.files().create("test.txt", content);
+    ```
+  </Accordion>
+
+  <Accordion title="Liskov Substitution">
+    All sandbox implementations are interchangeable. Code written for `LocalSandbox` works identically with `DockerSandbox` or `E2BSandbox`:
+
+    ```java
+    void runTests(Sandbox sandbox) {
+        // Works with any implementation
+        ExecResult result = sandbox.exec(ExecSpec.of("mvn", "test"));
+    }
+
+    // Choose isolation level at runtime
+    Sandbox sandbox = requiresIsolation
+        ? DockerSandbox.create()
+        : LocalSandbox.create();
+    ```
+  </Accordion>
+
+  <Accordion title="JDK 21 Baseline">
+    Built for modern Java with:
+    - Virtual threads for concurrent operations
+    - Pattern matching and sealed classes
+    - Modern NIO file APIs
+    - Try-with-resources for automatic cleanup
+  </Accordion>
+</AccordionGroup>
+
+## Used By
+
+Agent Sandbox is used by:
+
+- **[Agent Judge](/projects/incubating/agent-judge)** - The `agent-judge-exec` module uses sandboxes for command-based evaluation
+- **[Spring AI Agents](/projects/incubating/spring-ai-agents)** - Provides isolated execution environments for autonomous agents
+
+## Resources
+
+<CardGroup cols={2}>
+  <Card
+    title="GitHub Repository"
+    icon="github"
+    href="https://github.com/spring-ai-community/agent-sandbox"
+  >
+    Source code and contribution guidelines
+  </Card>
+  <Card
+    title="E2B Documentation"
+    icon="book"
+    href="https://e2b.dev/docs"
+  >
+    E2B cloud sandbox platform
+  </Card>
+</CardGroup>
+
+## License
+
+Agent Sandbox is Open Source software released under the [Apache 2.0 license](https://github.com/spring-ai-community/agent-sandbox/blob/main/LICENSE).

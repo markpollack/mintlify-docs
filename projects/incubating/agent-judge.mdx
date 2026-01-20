@@ -1,0 +1,455 @@
+---
+title: "Agent Judge"
+description: "Agent-agnostic evaluation framework with deterministic, command, and LLM judges"
+---
+
+<img
+  src="https://img.shields.io/badge/Status-Incubating-blue"
+  alt="Incubating Status"
+/>
+
+[GitHub](https://github.com/spring-ai-community/agent-judge) • [Maven Central](https://central.sonatype.com/search?q=org.springaicommunity.judge)
+
+## Overview
+
+Agent Judge is an **agent-agnostic evaluation framework** for verifying AI agent task completion. It provides a pluggable architecture with deterministic rules, command execution, and LLM-powered evaluation - all with zero coupling to any specific agent implementation.
+
+The library follows a clean separation of concerns: `agent-judge-core` has zero external dependencies, while specialized modules add capabilities like process execution (`agent-judge-exec`) and LLM evaluation (`agent-judge-llm`).
+
+## Core Abstractions
+
+<CardGroup cols={2}>
+  <Card
+    title="Judge"
+    icon="gavel"
+  >
+    Functional interface for evaluation logic - takes JudgmentContext, returns Judgment
+  </Card>
+  <Card
+    title="Judgment"
+    icon="clipboard-check"
+  >
+    Result containing Score, JudgmentStatus, reasoning, and granular Checks
+  </Card>
+  <Card
+    title="Score"
+    icon="star"
+  >
+    Sealed interface: BooleanScore, NumericalScore, or CategoricalScore
+  </Card>
+  <Card
+    title="Jury"
+    icon="users"
+  >
+    Multi-judge aggregation with configurable voting strategies
+  </Card>
+</CardGroup>
+
+## Module Structure
+
+| Module | Description | Dependencies |
+|--------|-------------|--------------|
+| `agent-judge-core` | Core Judge API and abstractions | None (zero deps) |
+| `agent-judge-exec` | Command execution judges | agent-sandbox, zt-exec |
+| `agent-judge-llm` | LLM-powered evaluation | spring-ai-client-chat |
+| `agent-judge-agent` | Agent-as-judge bridge interface | Core only |
+| `agent-judge-advisor` | AgentClient advisors | spring-ai-agent-client |
+| `agent-judge-bom` | Bill of Materials | N/A |
+
+## Quick Start
+
+### Maven BOM
+
+```xml
+<dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>org.springaicommunity.judge</groupId>
+            <artifactId>agent-judge-bom</artifactId>
+            <version>0.1.0-SNAPSHOT</version>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+    </dependencies>
+</dependencyManagement>
+
+<dependencies>
+    <dependency>
+        <groupId>org.springaicommunity.judge</groupId>
+        <artifactId>agent-judge-core</artifactId>
+    </dependency>
+</dependencies>
+```
+
+## Judge Interface
+
+The core `Judge` interface is a functional interface for lambda support:
+
+```java
+@FunctionalInterface
+public interface Judge {
+    Judgment judge(JudgmentContext context);
+}
+```
+
+**Async and Reactive Variants:**
+
+```java
+// For CompletableFuture-based async
+public interface AsyncJudge {
+    CompletableFuture<Judgment> judgeAsync(JudgmentContext context);
+}
+
+// For Spring WebFlux / Project Reactor
+public interface ReactiveJudge {
+    Mono<Judgment> judge(JudgmentContext context);
+}
+```
+
+## Judgment Context
+
+Complete evaluation input with all context an agent execution:
+
+```java
+JudgmentContext context = JudgmentContext.builder()
+    .goal("Increase test coverage to 80%")
+    .workspace(Path.of("/project"))
+    .executionTime(Duration.ofMinutes(5))
+    .startedAt(Instant.now())
+    .agentOutput("Added 15 test cases...")
+    .status(ExecutionStatus.SUCCESS)
+    .build();
+```
+
+**ExecutionStatus values:** `SUCCESS`, `FAILED`, `TIMEOUT`, `CANCELLED`, `UNKNOWN`
+
+## Judgment Results
+
+```java
+Judgment result = judge.judge(context);
+
+// Result properties
+Score score = result.score();              // BooleanScore, NumericalScore, or CategoricalScore
+JudgmentStatus status = result.status();   // PASS, FAIL, ABSTAIN, or ERROR
+String reasoning = result.reasoning();      // Human-readable explanation
+List<Check> checks = result.checks();       // Granular sub-assertions
+```
+
+**JudgmentStatus values:** `PASS`, `FAIL`, `ABSTAIN`, `ERROR`
+
+### Checks (Sub-Assertions)
+
+Provide granular failure reporting:
+
+```java
+Judgment.builder()
+    .score(BooleanScore.FAIL)
+    .status(JudgmentStatus.FAIL)
+    .reasoning("2 of 3 checks failed")
+    .check(Check.passed("file-exists", "output.txt exists"))
+    .check(Check.failed("content-valid", "Missing required header"))
+    .check(Check.failed("format-correct", "Invalid JSON structure"))
+    .build();
+```
+
+## Score Types
+
+<AccordionGroup>
+  <Accordion title="BooleanScore">
+    Simple pass/fail scoring:
+
+    ```java
+    BooleanScore.PASS   // true
+    BooleanScore.FAIL   // false
+    ```
+  </Accordion>
+
+  <Accordion title="NumericalScore">
+    Continuous scoring with bounds and normalization:
+
+    ```java
+    // Score with min/max bounds
+    NumericalScore score = NumericalScore.of(85.0, 0.0, 100.0);
+
+    // Auto-normalizes to [0.0, 1.0]
+    double normalized = score.normalized();  // 0.85
+    ```
+  </Accordion>
+
+  <Accordion title="CategoricalScore">
+    Discrete categories from an allowed set:
+
+    ```java
+    CategoricalScore score = CategoricalScore.of(
+        "GOOD",
+        Set.of("EXCELLENT", "GOOD", "FAIR", "POOR")
+    );
+    ```
+  </Accordion>
+</AccordionGroup>
+
+The `Scores` utility class converts between score types for heterogeneous aggregation.
+
+## Built-in Judges
+
+### Deterministic Judges (agent-judge-core)
+
+<AccordionGroup>
+  <Accordion title="FileExistsJudge">
+    Verifies file existence:
+
+    ```java
+    FileExistsJudge judge = FileExistsJudge.of("target/output.txt");
+    Judgment result = judge.judge(context);
+    ```
+  </Accordion>
+
+  <Accordion title="FileContentJudge">
+    Verifies file content with match modes:
+
+    ```java
+    // Exact match
+    FileContentJudge.exact("config.json", expectedContent);
+
+    // Contains substring
+    FileContentJudge.contains("output.log", "BUILD SUCCESS");
+
+    // Regex pattern
+    FileContentJudge.regex("version.txt", "\\d+\\.\\d+\\.\\d+");
+    ```
+  </Accordion>
+
+  <Accordion title="Custom Deterministic Judge">
+    Build rule-based judges:
+
+    ```java
+    DeterministicJudge judge = DeterministicJudge.builder()
+        .name("config-valid")
+        .check(ctx -> validateConfig(ctx.workspace()))
+        .build();
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Command Judges (agent-judge-exec)
+
+<AccordionGroup>
+  <Accordion title="CommandJudge">
+    Execute shell commands and evaluate results:
+
+    ```java
+    CommandJudge judge = CommandJudge.builder()
+        .name("maven-tests")
+        .command("mvn", "test", "-q")
+        .expectedExitCode(0)
+        .timeout(Duration.ofMinutes(5))
+        .build();
+    ```
+  </Accordion>
+
+  <Accordion title="BuildSuccessJudge">
+    Specialized for build tools with wrapper auto-detection:
+
+    ```java
+    // Maven - auto-detects mvnw wrapper
+    BuildSuccessJudge maven = BuildSuccessJudge.maven("clean", "verify");
+
+    // Gradle - auto-detects gradlew wrapper
+    BuildSuccessJudge gradle = BuildSuccessJudge.gradle("build", "test");
+    ```
+
+    Default timeout: 10 minutes.
+  </Accordion>
+</AccordionGroup>
+
+### LLM Judges (agent-judge-llm)
+
+<AccordionGroup>
+  <Accordion title="CorrectnessJudge">
+    Uses LLM to evaluate if the agent accomplished its goal:
+
+    ```java
+    CorrectnessJudge judge = CorrectnessJudge.builder()
+        .chatClient(chatClient)
+        .build();
+
+    // Returns YES/NO with reasoning
+    Judgment result = judge.judge(context);
+    ```
+
+    Uses template method pattern for customization.
+  </Accordion>
+
+  <Accordion title="Custom LLM Judge">
+    Build custom LLM-powered evaluation:
+
+    ```java
+    LLMJudge judge = new LLMJudge(chatClient) {
+        @Override
+        protected String buildPrompt(JudgmentContext ctx) {
+            return "Evaluate code quality for: " + ctx.goal();
+        }
+
+        @Override
+        protected Judgment parseResponse(String response, JudgmentContext ctx) {
+            // Parse LLM response into Judgment
+        }
+    };
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Agent Judges (agent-judge-agent)
+
+Delegate evaluation to an AI agent using a bridge interface:
+
+```java
+public interface JudgeAgentClient {
+    JudgeAgentResponse execute(String goal, Path workspace);
+}
+
+// Adapt any agent client without hard dependencies
+JudgeAgentClient adapter = (goal, workspace) ->
+    myAgentClient.run(goal, workspace);
+```
+
+## Judge Composition
+
+The `Judges` utility class provides composition operators:
+
+```java
+// Logical AND (short-circuit)
+Judge combined = Judges.and(fileExistsJudge, contentValidJudge);
+
+// Logical OR (short-circuit)
+Judge either = Judges.or(primaryJudge, fallbackJudge);
+
+// Combine multiple judges
+Judge all = Judges.allOf(judge1, judge2, judge3);
+Judge any = Judges.anyOf(judge1, judge2, judge3);
+
+// Test judges
+Judge pass = Judges.alwaysPass("Skipped in test mode");
+Judge fail = Judges.alwaysFail("Feature not implemented");
+
+// Add metadata to any judge
+Judge named = Judges.named(myJudge, "my-judge", "Description", JudgeType.DETERMINISTIC);
+```
+
+## Jury System
+
+Combine multiple judges with voting strategies:
+
+```java
+SimpleJury jury = SimpleJury.builder()
+    .name("comprehensive-check")
+    .judge(fileJudge)
+    .judge(testJudge, 2.0)  // Weight of 2.0
+    .judge(codeQualityJudge)
+    .votingStrategy(VotingStrategy.majority())
+    .parallel(true)  // Execute judges in parallel (default)
+    .build();
+
+Verdict verdict = jury.vote(context);
+
+// Access results
+Judgment aggregated = verdict.aggregated();
+List<Judgment> individual = verdict.individual();
+Map<String, Judgment> byName = verdict.individualByName();
+Map<String, Double> weights = verdict.weights();
+```
+
+### Voting Strategies
+
+| Strategy | Description | Pass Condition |
+|----------|-------------|----------------|
+| `MajorityVotingStrategy` | Majority vote | passCount > failCount |
+| `ConsensusStrategy` | Unanimous agreement | All judges agree |
+| `AverageVotingStrategy` | Simple average | average >= 0.5 |
+| `WeightedAverageStrategy` | Weighted average | weighted avg >= 0.5 |
+| `MedianVotingStrategy` | Median (outlier-robust) | median >= 0.5 |
+
+**Majority Voting Policies:**
+
+```java
+MajorityVotingStrategy.builder()
+    .tiePolicy(TiePolicy.FAIL)           // PASS, FAIL, or ABSTAIN on ties
+    .errorPolicy(ErrorPolicy.TREAT_AS_FAIL)  // How to handle ERROR judgments
+    .build();
+```
+
+### Jury Utilities
+
+```java
+// Create jury from judges with auto-naming
+Jury jury = Juries.fromJudges(VotingStrategy.majority(), judge1, judge2, judge3);
+
+// Combine juries into meta-jury
+Jury metaJury = Juries.combine(jury1, jury2, VotingStrategy.consensus());
+
+// Create meta-jury from multiple juries
+Jury combined = Juries.allOf(VotingStrategy.average(), jury1, jury2, jury3);
+```
+
+## Utilities
+
+### MavenTestRunner
+
+Run Maven tests with wrapper auto-detection:
+
+```java
+ExecResult result = MavenTestRunner.run(projectPath, Duration.ofMinutes(10));
+if (result.exitCode() == 0) {
+    // Tests passed
+}
+```
+
+### JaCoCoReportParser
+
+Parse JaCoCo XML reports for coverage metrics:
+
+```java
+CoverageMetrics metrics = JaCoCoReportParser.parse(
+    projectPath.resolve("target/site/jacoco/jacoco.xml")
+);
+
+double lineCoverage = metrics.linePercentage();      // e.g., 85.5
+double branchCoverage = metrics.branchPercentage();  // e.g., 72.3
+double methodCoverage = metrics.methodPercentage();  // e.g., 90.1
+```
+
+## Spring AI Agents Integration
+
+Agent Judge powers the evaluation system in [Spring AI Agents](/projects/incubating/spring-ai-agents):
+
+```java
+CoverageJudge judge = new CoverageJudge(80.0);
+
+AgentClientResponse response = agentClient
+    .goal("Increase test coverage to 80%")
+    .advisors(JudgeAdvisor.builder().judge(judge).build())
+    .run();
+```
+
+## Resources
+
+<CardGroup cols={2}>
+  <Card
+    title="GitHub Repository"
+    icon="github"
+    href="https://github.com/spring-ai-community/agent-judge"
+  >
+    Source code and contribution guidelines
+  </Card>
+  <Card
+    title="Maven Central"
+    icon="box"
+    href="https://central.sonatype.com/search?q=org.springaicommunity.judge"
+  >
+    Published artifacts
+  </Card>
+</CardGroup>
+
+## License
+
+Agent Judge is Open Source software released under the [Apache 2.0 license](https://github.com/spring-ai-community/agent-judge/blob/main/LICENSE).

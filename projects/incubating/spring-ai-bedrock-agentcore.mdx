@@ -8,15 +8,22 @@ description: "Spring Boot starter for AWS Bedrock AgentCore Runtime integration"
   alt="Incubating Status"
 />
 
-[GitHub](https://github.com/spring-ai-community/spring-ai-bedrock-agentcore)
+[GitHub](https://github.com/spring-ai-community/spring-ai-bedrock-agentcore) • [Maven Central](https://central.sonatype.com/search?q=org.springaicommunity%20bedrock-agentcore)
 
 ## Overview
 
 A Spring Boot starter that enables existing Spring Boot applications to conform to the AWS Bedrock AgentCore Runtime contract with minimal configuration. Simply add the dependency and annotate your agent methods.
 
 <Note>
-**Version**: 1.0.0-RC1
+**Version**: 1.0.0-RC3
 </Note>
+
+## Modules
+
+| Module | Description |
+|--------|-------------|
+| `spring-ai-bedrock-agentcore-starter` | Core starter for AgentCore Runtime integration |
+| `spring-ai-memory-bedrock-agentcore` | Spring AI ChatMemoryRepository using AgentCore Memory |
 
 ## Key Features
 
@@ -34,7 +41,7 @@ A Spring Boot starter that enables existing Spring Boot applications to conform 
     Built-in `/ping` endpoint with Spring Boot Actuator integration
   </Card>
   <Card title="Async Task Tracking" icon="list-check">
-    Convenient methods for background task tracking
+    Prevents premature shutdown during background work
   </Card>
   <Card title="Rate Limiting" icon="gauge">
     Built-in Bucket4j throttling for invocations and ping endpoints
@@ -49,7 +56,7 @@ A Spring Boot starter that enables existing Spring Boot applications to conform 
 <dependency>
     <groupId>org.springaicommunity</groupId>
     <artifactId>spring-ai-bedrock-agentcore-starter</artifactId>
-    <version>1.0.0-RC1</version>
+    <version>1.0.0-RC3</version>
 </dependency>
 ```
 
@@ -74,36 +81,60 @@ The application will automatically expose:
 
 ## Supported Method Signatures
 
-### Basic POJO Method
+<AccordionGroup>
+  <Accordion title="Basic POJO Method">
+    ```java
+    @AgentCoreInvocation
+    public MyResponse processRequest(MyRequest request) {
+        return new MyResponse("Processed: " + request.prompt());
+    }
 
-```java
-@AgentCoreInvocation
-public MyResponse processRequest(MyRequest request) {
-    return new MyResponse("Processed: " + request.prompt());
-}
+    record MyRequest(String prompt) {}
+    record MyResponse(String message) {}
+    ```
+  </Accordion>
 
-record MyRequest(String prompt) {}
-record MyResponse(String message) {}
-```
+  <Accordion title="With AgentCore Context">
+    ```java
+    @AgentCoreInvocation
+    public MyResponse processWithContext(MyRequest request, AgentCoreContext context) {
+        var sessionId = context.getHeader(AgentCoreHeaders.SESSION_ID);
+        return new MyResponse("Session " + sessionId + ": " + request.prompt());
+    }
+    ```
+  </Accordion>
 
-### With AgentCore Context
+  <Accordion title="Map Method (Flexible)">
+    ```java
+    @AgentCoreInvocation
+    public Map<String, Object> processData(Map<String, Object> data) {
+        return Map.of(
+            "input", data,
+            "response", "Processed: " + data.get("message"),
+            "timestamp", System.currentTimeMillis()
+        );
+    }
+    ```
+  </Accordion>
 
-```java
-@AgentCoreInvocation
-public MyResponse processWithContext(MyRequest request, AgentCoreContext context) {
-    var sessionId = context.getHeader(AgentCoreHeaders.SESSION_ID);
-    return new MyResponse("Session " + sessionId + ": " + request.prompt());
-}
-```
+  <Accordion title="String Method (text/plain)">
+    ```java
+    @AgentCoreInvocation
+    public String handlePrompt(String prompt) {
+        return "Response: " + prompt;
+    }
+    ```
+  </Accordion>
 
-### SSE Streaming with Spring AI
-
-```java
-@AgentCoreInvocation
-public Flux<String> streamingAgent(String prompt) {
-    return chatClient.prompt().user(prompt).stream().content();
-}
-```
+  <Accordion title="SSE Streaming with Spring AI">
+    ```java
+    @AgentCoreInvocation
+    public Flux<String> streamingAgent(String prompt) {
+        return chatClient.prompt().user(prompt).stream().content();
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
 
 ## Background Task Tracking
 
@@ -122,26 +153,183 @@ public String asyncTaskHandling(MyRequest request, AgentCoreContext context) {
 }
 ```
 
-The `/ping` endpoint returns **HealthyBusy** while tasks are active, preventing premature shutdown.
+The `/ping` endpoint returns:
+- **"Healthy"** - Agent is ready, no background tasks
+- **"HealthyBusy"** - Agent is healthy but actively processing (prevents shutdown)
+- **"Unhealthy"** - Agent has issues (with Actuator integration)
+
+## Health Monitoring
+
+**Without Spring Boot Actuator:**
+- Returns static "Healthy" status
+- Always responds with HTTP 200
+
+**With Spring Boot Actuator:**
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-actuator</artifactId>
+</dependency>
+```
+- Integrates with Actuator health checks
+- Maps Actuator status: `UP` → "Healthy", `DOWN` → "Unhealthy"
+- Tracks status change timestamps
+
+## Custom Controller Override
+
+Override default controllers with custom implementations using marker interfaces:
+
+```java
+// Override /invocations
+@RestController
+public class CustomInvocationsController implements AgentCoreInvocationsHandler {
+
+    @PostMapping("/invocations")
+    public ResponseEntity<?> handleInvocations(@RequestBody String request) {
+        return ResponseEntity.ok("Custom response");
+    }
+}
+
+// Override /ping
+@RestController
+public class CustomPingController implements AgentCorePingHandler {
+
+    @GetMapping("/ping")
+    public ResponseEntity<?> ping() {
+        return ResponseEntity.ok(Map.of("status", "Custom Healthy"));
+    }
+}
+```
 
 ## Configuration
 
 ```properties
-# Customize rate limits in requests per minute (optional)
+# Rate limits in requests per minute (optional, disabled by default)
 agentcore.throttle.invocations-limit=50
 agentcore.throttle.ping-limit=200
+```
+
+---
+
+## Memory Module
+
+The `spring-ai-memory-bedrock-agentcore` module provides Spring AI `ChatMemoryRepository` integration with AWS Bedrock AgentCore Memory for persistent conversation storage.
+
+### Add Dependency
+
+```xml
+<dependency>
+    <groupId>org.springaicommunity</groupId>
+    <artifactId>spring-ai-memory-bedrock-agentcore</artifactId>
+    <version>1.0.0-RC3</version>
+</dependency>
+```
+
+### Configure Memory
+
+```yaml
+agentcore:
+  memory:
+    memory-id: your-agentcore-memory-id    # Required
+    total-events-limit: 100                # Max events to retrieve
+    default-session: default-session       # Default session name
+    page-size: 50                          # API pagination size
+    ignore-unknown-roles: false            # Handle unknown roles
+```
+
+### Use with Spring AI
+
+```java
+@Service
+public class ChatService {
+
+    private final ChatClient chatClient;
+    private final ChatMemory chatMemory;
+
+    public ChatService(ChatClient.Builder chatClientBuilder, ChatMemoryRepository memoryRepository) {
+        this.chatClient = chatClientBuilder.build();
+        this.chatMemory = MessageWindowChatMemory.builder()
+            .chatMemoryRepository(memoryRepository)
+            .maxMessages(10)
+            .build();
+    }
+
+    public String chat(String conversationId, String message) {
+        return chatClient.prompt()
+            .user(message)
+            .advisors(chatMemory.getChatMemoryAdvisor(conversationId))
+            .call()
+            .content();
+    }
+}
+```
+
+### Conversation ID Format
+
+- **Simple**: `user123` → actor: `user123`, session: `default-session`
+- **With Session**: `user123:session456` → actor: `user123`, session: `session456`
+
+### Message Type Mapping
+
+| Spring AI Message | AgentCore Role | Supported |
+|-------------------|----------------|-----------|
+| `UserMessage` | `USER` | Yes |
+| `AssistantMessage` | `ASSISTANT` | Yes |
+| `SystemMessage` | N/A | Filtered |
+| `ToolResponseMessage` | N/A | Filtered |
+
+### AWS Permissions
+
+```json
+{
+  "Effect": "Allow",
+  "Action": [
+    "bedrock-agentcore:ListEvents",
+    "bedrock-agentcore:CreateEvent",
+    "bedrock-agentcore:DeleteEvent"
+  ],
+  "Resource": "arn:aws:bedrock-agentcore:*:*:memory/*"
+}
 ```
 
 ## Examples
 
 See the `examples/` directory in the repository:
 
-- **`simple-spring-boot-app/`** - Minimal AgentCore agent with async task tracking
-- **`spring-ai-sse-chat-client/`** - SSE streaming with Spring AI and Amazon Bedrock
-- **`spring-ai-simple-chat-client/`** - Traditional Spring AI integration
-- **`spring-ai-override-invocations/`** - Custom controller override using marker interfaces
+| Example | Description |
+|---------|-------------|
+| `simple-spring-boot-app/` | Minimal AgentCore agent with async task tracking |
+| `spring-ai-sse-chat-client/` | SSE streaming with Spring AI and Amazon Bedrock |
+| `spring-ai-simple-chat-client/` | Traditional Spring AI integration |
+| `spring-ai-override-invocations/` | Custom controller override using marker interfaces |
+| `spring-ai-extended-chat-client/` | Extended chat client with JWT and Terraform deployment |
+| `spring-ai-memory-integration/` | Memory module integration example |
 
 ## Requirements
 
 - Java 17+
 - Spring Boot 3.x
+- Spring AI 1.1.1+ (for memory module)
+
+## Resources
+
+<CardGroup cols={2}>
+  <Card
+    title="GitHub Repository"
+    icon="github"
+    href="https://github.com/spring-ai-community/spring-ai-bedrock-agentcore"
+  >
+    Source code and contribution guidelines
+  </Card>
+  <Card
+    title="AWS Bedrock AgentCore"
+    icon="aws"
+    href="https://docs.aws.amazon.com/bedrock/latest/userguide/agents-core.html"
+  >
+    AWS Bedrock AgentCore documentation
+  </Card>
+</CardGroup>
+
+## License
+
+This project is licensed under the [Apache License 2.0](https://github.com/spring-ai-community/spring-ai-bedrock-agentcore/blob/main/LICENSE).

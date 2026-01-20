@@ -97,7 +97,7 @@ Spring AI Agents provides Agent SDKs for multiple platforms with Spring Boot aut
   <Card
     title="Secure Sandbox Isolation"
     icon="shield"
-    href="https://spring-ai-community.github.io/spring-ai-agents/getting-started/goals-and-workspaces.html"
+    href="/projects/incubating/agent-sandbox"
   >
     Docker container isolation with local fallback for safe agent execution
   </Card>
@@ -238,7 +238,7 @@ In Spring AI Agents, we model agents around these components:
   <Card
     title="Judges ⚖️"
     icon="gavel"
-    href="https://spring-ai-community.github.io/spring-ai-agents/judges/index.html"
+    href="/projects/incubating/agent-judge"
   >
     Verification that the goal was achieved
   </Card>
@@ -256,9 +256,9 @@ AgentClientResponse response = agentClient
     .run();
 ```
 
-**Sandboxes** provide isolated execution environments (Docker or local processes) for safe agent operations. **Judges** verify that goals were achieved - from simple file checks to LLM-powered validation.
+**Sandboxes** provide isolated execution environments (Docker, local processes, or cloud microVMs) for safe agent operations. **Judges** verify that goals were achieved - from simple file checks to LLM-powered validation.
 
-Learn more: [Sandboxes](https://spring-ai-community.github.io/spring-ai-agents/getting-started/goals-and-workspaces.html) • [Judges](https://spring-ai-community.github.io/spring-ai-agents/judges/index.html)
+Learn more: [Agent Sandbox](/projects/incubating/agent-sandbox) • [Agent Judge](/projects/incubating/agent-judge)
 
 ## Agent Advisors
 
@@ -288,6 +288,27 @@ public class WorkspaceContextAdvisor implements AgentCallAdvisor {
 - Evaluation/Judges (test running, file verification)
 - Security (goal validation, operation blocking)
 - Observability (metrics, logging, performance)
+
+## Related Projects
+
+These standalone libraries power Spring AI Agents' evaluation and isolation capabilities:
+
+<CardGroup cols={2}>
+  <Card
+    title="Agent Judge"
+    icon="gavel"
+    href="/projects/incubating/agent-judge"
+  >
+    Standalone evaluation framework - Judge, Jury, and Score APIs
+  </Card>
+  <Card
+    title="Agent Sandbox"
+    icon="box"
+    href="/projects/incubating/agent-sandbox"
+  >
+    Isolated execution API - Local, Docker, and E2B backends
+  </Card>
+</CardGroup>
 
 ## Resources
 
