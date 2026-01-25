@@ -1,5 +1,5 @@
 ---
-title: "Spring AI Agents"
+title: "Agent Client"
 description: "Autonomous CLI agent integrations for the Spring AI ecosystem"
 ---
 
@@ -8,32 +8,36 @@ description: "Autonomous CLI agent integrations for the Spring AI ecosystem"
   alt="Incubating Status"
 />
 
-[GitHub](https://github.com/spring-ai-community/spring-ai-agents) • [Docs](https://spring-ai-community.github.io/spring-ai-agents/) • [Maven](https://central.sonatype.com/repository/maven-snapshots/org/springaicommunity/agents/)
+[GitHub](https://github.com/spring-ai-community/agent-client) • [Docs](https://spring-ai-community.github.io/agent-client/) • [Maven](https://central.sonatype.com/repository/maven-snapshots/org/springaicommunity/agents/)
+
+<Note>
+**Renamed**: This project was previously called "Spring AI Agents" and has been renamed to "Agent Client" in version 0.9.0. The evaluation framework (Agent Judge) and sandbox isolation (Agent Sandbox) have been extracted into separate repositories.
+</Note>
 
 ## Overview
 
 **What ChatClient did for completion endpoints, AgentClient does for Agent CLIs.**
 
-Spring AI Agents provides a unified framework for autonomous agents with **Goals** (clear objectives), **Tools** (actions agents can take), **Context** (information for decisions), **Judges** (automated verification), and **Sandboxes** (isolated execution). This project brings multiple AI agent platforms to Spring applications as first-class citizens with Spring Boot auto-configuration.
+Agent Client provides a unified framework for autonomous agents with **Goals** (clear objectives), **Tools** (actions agents can take), **Context** (information for decisions), **Judges** (automated verification), and **Sandboxes** (isolated execution). This project brings multiple AI agent platforms to Spring applications as first-class citizens with Spring Boot auto-configuration.
 
 Currently supported: **[Claude Code](https://www.anthropic.com/claude/code)**, **[Gemini](https://ai.google.dev/gemini-api)**, **[Amazon Q](https://aws.amazon.com/q/developer/)**, **[Amp](https://www.amp.ai/)**, and **[Codex](https://openai.com/index/openai-codex/)**. Coming soon: **[Goose](https://github.com/square/goose)**, **[Aider](https://aider.chat/)**, **[OpenHands](https://www.all-hands.dev/)**, and **[GitHub Copilot CLI](https://github.com/features/copilot/cli)**.
 
 <img src="/images/projects/spring-ai-agents-workflow.png" alt="Agent Execution Workflow" />
 
 <Note>
-**Version**: 0.1.0-SNAPSHOT
+**Version**: 0.9.0-SNAPSHOT
 Maven snapshot artifacts are available from [Maven Central Snapshots](https://central.sonatype.com/repository/maven-snapshots/org/springaicommunity/agents/)
 </Note>
 
 ## Agent SDKs
 
-Spring AI Agents provides Agent SDKs for multiple platforms with Spring Boot auto-configuration:
+Agent Client provides Agent SDKs for multiple platforms with Spring Boot auto-configuration:
 
 <CardGroup cols={3}>
   <Card
     title="Claude Agent SDK"
     icon="robot"
-    href="https://spring-ai-community.github.io/spring-ai-agents/api/claude-code-sdk.html"
+    href="https://spring-ai-community.github.io/agent-client/api/claude-code-sdk.html"
   >
     <img src="/images/agents/claude-code-logo.png" alt="Claude Code" style={{width: '60px', marginBottom: '0.5rem'}} />
 
@@ -42,7 +46,7 @@ Spring AI Agents provides Agent SDKs for multiple platforms with Spring Boot aut
   <Card
     title="Gemini Agent SDK"
     icon="sparkles"
-    href="https://spring-ai-community.github.io/spring-ai-agents/api/gemini-cli-sdk.html"
+    href="https://spring-ai-community.github.io/agent-client/api/gemini-cli-sdk.html"
   >
     <img src="/images/agents/gemini-logo.png" alt="Gemini" style={{width: '60px', marginBottom: '0.5rem'}} />
 
@@ -51,7 +55,7 @@ Spring AI Agents provides Agent SDKs for multiple platforms with Spring Boot aut
   <Card
     title="Amazon Q Agent SDK"
     icon="aws"
-    href="https://spring-ai-community.github.io/spring-ai-agents/api/amazon-q-cli-sdk.html"
+    href="https://spring-ai-community.github.io/agent-client/api/amazon-q-cli-sdk.html"
   >
     <img src="/images/agents/amazon-q-logo.png" alt="Amazon Q" style={{width: '60px', marginBottom: '0.5rem'}} />
 
@@ -60,7 +64,7 @@ Spring AI Agents provides Agent SDKs for multiple platforms with Spring Boot aut
   <Card
     title="Amp Agent SDK"
     icon="wand-magic"
-    href="https://spring-ai-community.github.io/spring-ai-agents/api/amp-cli-sdk.html"
+    href="https://spring-ai-community.github.io/agent-client/api/amp-cli-sdk.html"
   >
     <img src="/images/agents/amp-logo.png" alt="Amp" style={{width: '60px', marginBottom: '0.5rem'}} />
 
@@ -69,7 +73,7 @@ Spring AI Agents provides Agent SDKs for multiple platforms with Spring Boot aut
   <Card
     title="Codex Agent SDK"
     icon="code"
-    href="https://spring-ai-community.github.io/spring-ai-agents/api/codex-cli-sdk.html"
+    href="https://spring-ai-community.github.io/agent-client/api/codex-cli-sdk.html"
   >
     <img src="/images/agents/codex-logo.png" alt="Codex" style={{width: '60px', marginBottom: '0.5rem'}} />
 
@@ -78,7 +82,7 @@ Spring AI Agents provides Agent SDKs for multiple platforms with Spring Boot aut
   <Card
     title="Custom Agent SDK"
     icon="puzzle-piece"
-    href="https://spring-ai-community.github.io/spring-ai-agents/api/agentclient.html"
+    href="https://spring-ai-community.github.io/agent-client/api/agentclient.html"
   >
     Bring your own agent
   </Card>
@@ -90,7 +94,7 @@ Spring AI Agents provides Agent SDKs for multiple platforms with Spring Boot aut
   <Card
     title="Spring Boot Auto-Configuration"
     icon="leaf"
-    href="https://spring-ai-community.github.io/spring-ai-agents/getting-started/autoconfiguration.html"
+    href="https://spring-ai-community.github.io/agent-client/getting-started/autoconfiguration.html"
   >
     Automatic agent discovery and configuration with Spring Boot starters
   </Card>
@@ -104,14 +108,14 @@ Spring AI Agents provides Agent SDKs for multiple platforms with Spring Boot aut
   <Card
     title="Unified AgentClient API"
     icon="code"
-    href="https://spring-ai-community.github.io/spring-ai-agents/api/agentclient.html"
+    href="https://spring-ai-community.github.io/agent-client/api/agentclient.html"
   >
     Consistent interface across all agent providers
   </Card>
   <Card
     title="CLI Discovery"
     icon="magnifying-glass"
-    href="https://spring-ai-community.github.io/spring-ai-agents/concepts/cli-agents.html"
+    href="https://spring-ai-community.github.io/agent-client/concepts/cli-agents.html"
   >
     Automatic detection of installed CLI tools
   </Card>
@@ -120,7 +124,7 @@ Spring AI Agents provides Agent SDKs for multiple platforms with Spring Boot aut
 ## Agent Roadmap
 
 <AccordionGroup>
-  <Accordion title="✅ Currently Supported">
+  <Accordion title="Currently Supported">
     - **Claude Code** - Anthropic's autonomous coding assistant
     - **Gemini** - Google's AI development platform
     - **Amazon Q** - AWS's enterprise AI assistant
@@ -128,7 +132,7 @@ Spring AI Agents provides Agent SDKs for multiple platforms with Spring Boot aut
     - **Codex** - OpenAI's code generation model
   </Accordion>
 
-  <Accordion title="🚧 Coming Soon">
+  <Accordion title="Coming Soon">
     - **[Goose](https://github.com/square/goose)** - Square's AI agent framework
     - **[Aider](https://aider.chat/)** - AI pair programming in your terminal ([GitHub](https://github.com/paul-gauthier/aider))
     - **[OpenHands](https://www.all-hands.dev/)** - Open-source AI software engineer ([GitHub](https://github.com/All-Hands-AI/OpenHands))
@@ -149,24 +153,24 @@ An autonomous agent that increased test coverage from **0% to 71.4%** on Spring'
 > Model quality matters: Same coverage, different code quality. Claude generated production-ready tests while Gemini used slower patterns (@SpringBootTest).
 
 <Note>
-**Learn More**: See the [Code Coverage Agent Guide](https://spring-ai-community.github.io/spring-ai-agents/getting-started/code-coverage-agent.html) for detailed implementation and results.
+**Learn More**: See the [Code Coverage Agent Guide](https://spring-ai-community.github.io/agent-client/getting-started/code-coverage-agent.html) for detailed implementation and results.
 </Note>
 
 ## Quick Start
 
 ### Try with JBang (Zero Setup)
 
-The fastest way to try Spring AI Agents - no cloning, no building:
+The fastest way to try Agent Client - no cloning, no building:
 
 ```bash
 # One-time setup: Add the catalog
 jbang catalog add --name=springai \
-  https://raw.githubusercontent.com/spring-ai-community/spring-ai-agents/main/jbang-catalog.json
+  https://raw.githubusercontent.com/spring-ai-community/agent-client/main/jbang-catalog.json
 
 # Static content example
 jbang agents@springai hello-world \
   path=greeting.txt \
-  content="Hello Spring AI Agents!"
+  content="Hello Agent Client!"
 
 # AI-powered examples (requires API keys)
 export ANTHROPIC_API_KEY="your-key-here"
@@ -183,7 +187,7 @@ jbang agents@springai hello-world-agent-ai \
 <dependency>
     <groupId>org.springaicommunity.agents</groupId>
     <artifactId>spring-ai-starter-agent</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>0.9.0-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -205,38 +209,38 @@ AgentClientResponse response = agentClient
 
 ## Complete Architecture
 
-The complete Spring AI Agents architecture showing all five core concepts working together:
+The complete Agent Client architecture showing all five core concepts working together:
 
-<img src="/images/projects/spring-ai-agents-complete-architecture.png" alt="Spring AI Agents Complete Architecture" />
+<img src="/images/projects/spring-ai-agents-complete-architecture.png" alt="Agent Client Complete Architecture" />
 
 ## Core Domain Model
 
-In Spring AI Agents, we model agents around these components:
+In Agent Client, we model agents around these components:
 
 <CardGroup cols={2}>
   <Card
-    title="Goals 🎯"
+    title="Goals"
     icon="bullseye"
-    href="https://spring-ai-community.github.io/spring-ai-agents/getting-started/goals-and-workspaces.html"
+    href="https://spring-ai-community.github.io/agent-client/getting-started/goals-and-workspaces.html"
   >
     Clear objectives that guide agent execution
   </Card>
   <Card
-    title="Tools 🔧"
+    title="Tools"
     icon="wrench"
-    href="https://spring-ai-community.github.io/spring-ai-agents/concepts/cli-agents.html"
+    href="https://spring-ai-community.github.io/agent-client/concepts/cli-agents.html"
   >
     Actions the agent can take (call APIs, run commands, read files)
   </Card>
   <Card
-    title="Context 📊"
+    title="Context"
     icon="database"
-    href="https://spring-ai-community.github.io/spring-ai-agents/api/context-engineering.html"
+    href="https://spring-ai-community.github.io/agent-client/api/context-engineering.html"
   >
     Information the agent needs to make decisions
   </Card>
   <Card
-    title="Judges ⚖️"
+    title="Judges"
     icon="gavel"
     href="/projects/incubating/agent-judge"
   >
@@ -262,7 +266,7 @@ Learn more: [Agent Sandbox](/projects/incubating/agent-sandbox) • [Agent Judge
 
 ## Agent Advisors
 
-Spring AI Agents implements the same advisor pattern as Spring AI's ChatClient:
+Agent Client implements the same advisor pattern as Spring AI's ChatClient:
 
 ```java
 public class WorkspaceContextAdvisor implements AgentCallAdvisor {
@@ -291,7 +295,7 @@ public class WorkspaceContextAdvisor implements AgentCallAdvisor {
 
 ## Related Projects
 
-These standalone libraries power Spring AI Agents' evaluation and isolation capabilities:
+These standalone libraries power Agent Client's evaluation and isolation capabilities:
 
 <CardGroup cols={2}>
   <Card
@@ -316,28 +320,28 @@ These standalone libraries power Spring AI Agents' evaluation and isolation capa
   <Card
     title="Official Documentation"
     icon="book"
-    href="https://spring-ai-community.github.io/spring-ai-agents/"
+    href="https://spring-ai-community.github.io/agent-client/"
   >
     Complete documentation and guides
   </Card>
   <Card
     title="GitHub Repository"
     icon="github"
-    href="https://github.com/spring-ai-community/spring-ai-agents"
+    href="https://github.com/spring-ai-community/agent-client"
   >
     View source code and contribute
   </Card>
   <Card
     title="Getting Started"
     icon="rocket"
-    href="https://spring-ai-community.github.io/spring-ai-agents/getting-started.html"
+    href="https://spring-ai-community.github.io/agent-client/getting-started.html"
   >
     Quick start guide
   </Card>
   <Card
     title="API Reference"
     icon="code"
-    href="https://spring-ai-community.github.io/spring-ai-agents/api/agentclient.html"
+    href="https://spring-ai-community.github.io/agent-client/api/agentclient.html"
   >
     API documentation
   </Card>
@@ -345,4 +349,4 @@ These standalone libraries power Spring AI Agents' evaluation and isolation capa
 
 ## License
 
-Spring AI Agents is Open Source software released under the [Apache 2.0 license](https://github.com/spring-ai-community/spring-ai-agents/blob/main/LICENSE).
+Agent Client is Open Source software released under the [Apache 2.0 license](https://github.com/spring-ai-community/agent-client/blob/main/LICENSE).
