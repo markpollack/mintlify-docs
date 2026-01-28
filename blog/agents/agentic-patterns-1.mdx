@@ -1,0 +1,311 @@
+---
+title: "Building Effective Agents with Spring AI (Part 1)"
+sidebarTitle: "Building Effective Agents with..."
+description: "In a recent research publication: [Building effective agents](https://www.anthropic.com/research/building-effective-agents), Anthropic shared valuable insights..."
+author: tzolov
+date: 2025-01-21
+---
+
+In a recent research publication: [Building effective agents](https://www.anthropic.com/research/building-effective-agents), Anthropic shared valuable insights about building effective Large Language Model (LLM) agents. What makes this research particularly interesting is its emphasis on simplicity and composability over complex frameworks. Let's explore how these principles translate into practical implementations using [Spring AI](https://docs.spring.io/spring-ai/reference/index.html).
+
+<img src="https://raw.githubusercontent.com/spring-io/spring-io-static/refs/heads/main/blog/tzolov/spring-ai-agentic-systems.jpg" alt="Agent Systems" width="350"/>
+
+While the pattern descriptions and diagrams are sourced from Anthropic's original publication, we'll focus on how to implement these patterns using Spring AI's features for model portability and structured output. We recommend reading the original paper first.
+
+The [agentic-patterns](https://github.com/spring-projects/spring-ai-examples/tree/main/agentic-patterns) project implements the patterns discussed below.
+
+## Agentic Systems
+
+The research publication makes an important architectural distinction between two types of agentic systems:
+
+1. **Workflows**: Systems where LLMs and tools are orchestrated through predefined code paths (e.g., prescriptive system)
+2. **Agents**: Systems where LLMs dynamically direct their own processes and tool usage
+
+The key insight is that while fully autonomous agents might seem appealing, workflows often provide better predictability and consistency for well-defined tasks. This aligns perfectly with enterprise requirements where reliability and maintainability are crucial.
+
+Let's examine how Spring AI implements these concepts through five fundamental patterns, each serving specific use cases:
+
+### 1. [Chain Workflow](https://github.com/spring-projects/spring-ai-examples/tree/main/agentic-patterns/chain-workflow)
+
+The Chain Workflow pattern exemplifies the principle of breaking down complex tasks into simpler, more manageable steps.
+
+![Prompt Chaining Workflow](https://www.anthropic.com/_next/image?url=https%3A%2F%2Fwww-cdn.anthropic.com%2Fimages%2F4zrzovbb%2Fwebsite%2F7418719e3dab222dccb379b8879e1dc08ad34c78-2401x1000.png&w=3840&q=75)
+
+**When to Use:**
+- Tasks with clear sequential steps
+- When you want to trade latency for higher accuracy
+- When each step builds on the previous step's output
+
+Here's a practical example from Spring AI's implementation:
+
+```java
+public class ChainWorkflow {
+    private final ChatClient chatClient;
+    private final String[] systemPrompts;
+
+    // Processes input through a series of prompts, where each step's output
+    // becomes input for the next step in the chain.     
+    public String chain(String userInput) {
+        String response = userInput;
+        for (String prompt : systemPrompts) {
+            // Combine the system prompt with previous response
+            String input = String.format("{%s}\n {%s}", prompt, response);
+            // Process through the LLM and capture output
+            response = chatClient.prompt(input).call().content();
+        }
+        return response;
+    }
+}
+```
+
+This implementation demonstrates several key principles:
+- Each step has a focused responsibility
+- Output from one step becomes input for the next
+- The chain is easily extensible and maintainable
+
+### 2. [Parallelization Workflow](https://github.com/spring-projects/spring-ai-examples/tree/main/agentic-patterns/parallelization-workflow)
+
+LLMs can work simultaneously on tasks and have their outputs aggregated programmatically. The parallelization workflow manifests in two key variations:
+
+- **Sectioning**: Breaking tasks into independent subtasks for parallel processing
+- **Voting**: Running multiple instances of the same task for consensus
+
+![Parallelization Workflow](https://www.anthropic.com/_next/image?url=https%3A%2F%2Fwww-cdn.anthropic.com%2Fimages%2F4zrzovbb%2Fwebsite%2F406bb032ca007fd1624f261af717d70e6ca86286-2401x1000.png&w=3840&q=75)
+
+**When to Use:**
+- Processing large volumes of similar but independent items
+- Tasks requiring multiple independent perspectives
+- When processing time is critical and tasks are parallelizable
+
+The Parallelization Workflow pattern demonstrates efficient concurrent processing of multiple Large Language Model (LLM) operations. This pattern is particularly useful for scenarios requiring parallel execution of LLM calls with automated output aggregation.
+
+Here's a basic example of using the Parallelization Workflow:
+
+```java
+List<String> parallelResponse = new ParallelizationWorkflow(chatClient)
+    .parallel(
+        "Analyze how market changes will impact this stakeholder group.",
+        List.of(
+            "Customers: ...",
+            "Employees: ...",
+            "Investors: ...",
+            "Suppliers: ..."
+        ),
+        4
+    );
+```
+
+This example demonstrates parallel processing of stakeholder analysis, where each stakeholder group is analyzed concurrently.
+
+### 3. [Routing Workflow](https://github.com/spring-projects/spring-ai-examples/tree/main/agentic-patterns/routing-workflow)
+
+The Routing pattern implements intelligent task distribution, enabling specialized handling for different types of input.
+
+![Routing Workflow](https://www.anthropic.com/_next/image?url=https%3A%2F%2Fwww-cdn.anthropic.com%2Fimages%2F4zrzovbb%2Fwebsite%2F5c0c0e9fe4def0b584c04d37849941da55e5e71c-2401x1000.png&w=3840&q=75)
+
+This pattern is designed for complex tasks where different types of inputs are better handled by specialized processes. It uses an LLM to analyze input content and route it to the most appropriate specialized prompt or handler.
+
+**When to Use:**
+- Complex tasks with distinct categories of input
+- When different inputs require specialized processing
+- When classification can be handled accurately
+
+Here's a basic example of using the Routing Workflow:
+
+```java
+@Autowired
+private ChatClient chatClient;
+
+// Create the workflow
+RoutingWorkflow workflow = new RoutingWorkflow(chatClient);
+
+// Define specialized prompts for different types of input
+Map<String, String> routes = Map.of(
+    "billing", "You are a billing specialist. Help resolve billing issues...",
+    "technical", "You are a technical support engineer. Help solve technical problems...",
+    "general", "You are a customer service representative. Help with general inquiries..."
+);
+
+// Process input
+String input = "My account was charged twice last week";
+String response = workflow.route(input, routes);
+```
+
+### 4. [Orchestrator-Workers](https://github.com/spring-projects/spring-ai-examples/tree/main/agentic-patterns/orchestrator-workers)
+
+This pattern demonstrates how to implement more complex agent-like behavior while maintaining control:
+- A central LLM orchestrates task decomposition
+- Specialized workers handle specific subtasks
+- Clear boundaries maintain system reliability
+
+![Orchestration Workflow](https://www.anthropic.com/_next/image?url=https%3A%2F%2Fwww-cdn.anthropic.com%2Fimages%2F4zrzovbb%2Fwebsite%2F8985fc683fae4780fb34eab1365ab78c7e51bc8e-2401x1000.png&w=3840&q=75)
+
+**When to Use:**
+- Complex tasks where subtasks can't be predicted upfront
+- Tasks requiring different approaches or perspectives
+- Situations needing adaptive problem-solving
+
+The implementation uses Spring AI's ChatClient for LLM interactions and consists of:
+
+```java
+public class OrchestratorWorkersWorkflow {
+    public WorkerResponse process(String taskDescription) {
+        // 1. Orchestrator analyzes task and determines subtasks
+        OrchestratorResponse orchestratorResponse = // ...
+
+        // 2. Workers process subtasks in parallel
+        List<String> workerResponses = // ...
+
+        // 3. Results are combined into final response
+        return new WorkerResponse(/*...*/);
+    }
+}
+```
+
+#### Usage Example:
+
+```java
+ChatClient chatClient = // ... initialize chat client
+OrchestratorWorkersWorkflow workflow = new OrchestratorWorkersWorkflow(chatClient);
+
+// Process a task
+WorkerResponse response = workflow.process(
+    "Generate both technical and user-friendly documentation for a REST API endpoint"
+);
+
+// Access results
+System.out.println("Analysis: " + response.analysis());
+System.out.println("Worker Outputs: " + response.workerResponses());
+```
+
+### 5. [Evaluator-Optimizer](https://github.com/spring-projects/spring-ai-examples/tree/main/agentic-patterns/evaluator-optimizer)
+
+The Evaluator-Optimizer pattern implements a dual-LLM process where one model generates responses while another provides evaluation and feedback in an iterative loop, similar to a human writer's refinement process. The pattern consists of two main components:
+
+- **Generator LLM**: Produces initial responses and refines them based on feedback
+- **Evaluator LLM**: Analyzes responses and provides detailed feedback for improvement
+
+![Evaluator-Optimizer Workflow](https://www.anthropic.com/_next/image?url=https%3A%2F%2Fwww-cdn.anthropic.com%2Fimages%2F4zrzovbb%2Fwebsite%2F14f51e6406ccb29e695da48b17017e899a6119c7-2401x1000.png&w=3840&q=75)
+
+**When to Use:**
+- Clear evaluation criteria exist
+- Iterative refinement provides measurable value
+- Tasks benefit from multiple rounds of critique
+
+The implementation uses Spring AI's ChatClient for LLM interactions and consists of:
+
+```java
+public class EvaluatorOptimizerWorkflow {
+    public RefinedResponse loop(String task) {
+        // 1. Generate initial solution
+        Generation generation = generate(task, context);
+        
+        // 2. Evaluate the solution
+        EvaluationResponse evaluation = evaluate(generation.response(), task);
+        
+        // 3. If PASS, return solution
+        // 4. If NEEDS_IMPROVEMENT, incorporate feedback and generate new solution
+        // 5. Repeat until satisfactory
+        return new RefinedResponse(finalSolution, chainOfThought);
+    }
+}
+```
+
+#### Usage Example:
+
+```java
+ChatClient chatClient = // ... initialize chat client
+EvaluatorOptimizerWorkflow workflow = new EvaluatorOptimizerWorkflow(chatClient);
+
+// Process a task
+RefinedResponse response = workflow.loop(
+    "Create a Java class implementing a thread-safe counter"
+);
+
+// Access results
+System.out.println("Final Solution: " + response.solution());
+System.out.println("Evolution: " + response.chainOfThought());
+```
+
+## Spring AI's Implementation Advantages
+
+Spring AI's implementation of these patterns offers several benefits that align with Anthropic's recommendations:
+
+1. [Model Portability](https://docs.spring.io/spring-ai/reference/api/chat/comparison.html)
+```xml
+<!-- Easy model switching through dependencies -->
+<dependency>
+    <groupId>org.springframework.ai</groupId>
+    <artifactId>spring-ai-openai-spring-boot-starter</artifactId>
+</dependency>
+```
+
+2. [Structured Output](https://docs.spring.io/spring-ai/reference/api/structured-output-converter.html)
+```java
+// Type-safe handling of LLM responses
+EvaluationResponse response = chatClient.prompt(prompt)
+    .call()
+    .entity(EvaluationResponse.class);
+```
+
+3. [Consistent API](https://docs.spring.io/spring-ai/reference/api/chatclient.html)
+- Uniform interface across different LLM providers
+- Built-in error handling and retries
+- Flexible prompt management
+
+## Best Practices and Recommendations
+
+Based on both Anthropic's research and Spring AI's implementations, here are key recommendations for building effective LLM-based systems:
+
+- Start Simple
+   - Begin with basic workflows before adding complexity
+   - Use the simplest pattern that meets your requirements
+   - Add sophistication only when needed
+
+- Design for Reliability
+   - Implement clear error handling
+   - Use type-safe responses where possible
+   - Build in validation at each step
+
+- Consider Trade-offs
+   - Balance latency vs. accuracy
+   - Evaluate when to use parallel processing
+   - Choose between fixed workflows and dynamic agents
+
+## Future Work
+
+In Part 2 of this series, we'll explore how to build more advanced Agents that combine these foundational patterns with sophisticated features:
+
+**Pattern Composition**
+   - Combining multiple patterns to create more powerful workflows
+   - Building hybrid systems that leverage the strengths of each pattern
+   - Creating flexible architectures that can adapt to changing requirements
+
+**Advanced Agent Memory Management**
+   - Implementing persistent memory across conversations
+   - Managing context windows efficiently
+   - Developing strategies for long-term knowledge retention
+
+**Tools and Model-Context Protocol (MCP) Integration**
+   - Leveraging external tools through standardized interfaces
+   - Implementing MCP for enhanced model interactions
+   - Building extensible agent architectures
+
+Stay tuned for detailed implementations and best practices for these advanced features.
+
+## Tanzu Gen AI Solutions
+
+[VMware Tanzu Platform 10](https://blogs.vmware.com/tanzu/broadcom-announces-the-general-availability-of-vmware-tanzu-platform-10-making-it-easier-for-customers-to-build-and-launch-new-applications-in-the-private-cloud/) Tanzu AI Server, powered by Spring AI provides:
+
+- **Enterprise-Grade AI Deployment**: Production-ready solution for deploying AI applications within your VMware Tanzu environment
+- **Simplified Model Access**: Streamlined access to Amazon Bedrock Nova models through a unified interface
+- **Security and Governance**: Enterprise-level security controls and governance features
+- **Scalable Infrastructure**: Built on Spring AI, the integration supports scalable deployment of AI applications while maintaining high performance
+
+For more information about deploying AI applications with Tanzu AI Server, visit the [VMware Tanzu AI documentation](https://www.vmware.com/solutions/app-platform/ai).
+
+## Conclusion
+
+The combination of Anthropic's research insights and Spring AI's practical implementations provides a powerful framework for building effective LLM-based systems. By following these patterns and principles, developers can create robust, maintainable, and effective AI applications that deliver real value while avoiding unnecessary complexity.
+
+The key is to remember that sometimes the simplest solution is the most effective. Start with basic patterns, understand your use case thoroughly, and only add complexity when it demonstrably improves your system's performance or capabilities.

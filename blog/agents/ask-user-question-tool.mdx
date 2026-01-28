@@ -1,0 +1,186 @@
+---
+title: "Spring AI Agentic Patterns (Part 2): AskUserQuestionTool - Agents That Clarify Before Acting"
+sidebarTitle: "Agentic Patterns (Part 2):..."
+description: "Traditional AI interactions follow a common pattern: you provide a prompt, the AI makes assumptions, and produces a response. When those assumptions don't match..."
+author: tzolov
+date: 2026-01-16
+---
+
+<img style={{display: "block", margin: "auto"}} align="right" src="https://raw.githubusercontent.com/spring-io/spring-io-static/refs/heads/main/blog/tzolov/20260112/ask-user-question-tool-logo.png" width="200" />
+
+Traditional AI interactions follow a common pattern: you provide a prompt, the AI makes assumptions, and produces a response. When those assumptions don't match your needs, you're left iterating through corrections. Each assumption creates rework—wasting time and context.
+
+What if your AI agent could ask you clarifying questions before providing answers?
+
+The **AskUserQuestionTool** addresses this. It allows the AI agent to ask clarifying questions _before_ answering, gathers requirements interactively, and creates a specification aligned with your actual needs from the start.
+
+Spring AI's implementation brings this interactive pattern to the Java ecosystem, ensuring LLM portability—define your question handlers once and use them with OpenAI, Anthropic, Google Gemini, or any other supported model.
+
+**This is Part 2 of our Spring AI Agentic Patterns series.** In [Part 1](https://spring.io/blog/2026/01/13/spring-ai-generic-agent-skills), we explored Agent Skills—modular capabilities that extend AI functionality. Now we examine AskUserQuestionTool, which transforms AI agents into collaborative partners that gather requirements interactively.
+
+🚀 **Want to jump right in?** Skip to the [Getting Started](#getting-started) section.
+
+## How AskUserQuestionTool Works
+
+[AskUserQuestionTool](https://github.com/spring-ai-community/spring-ai-agent-utils/blob/main/spring-ai-agent-utils/docs/AskUserQuestionTool.md), part of the [spring-ai-agent-utils](https://github.com/spring-ai-community/spring-ai-agent-utils) toolkit, is a portable, Spring AI implementation of [Claude Code's AskUserQuestion tool](https://platform.claude.com/docs/en/agent-sdk/user-input#question-format), enabling AI agents to ask users multiple-choice questions during execution.
+
+<img style={{display: "block", margin: "auto"}} src="https://raw.githubusercontent.com/spring-io/spring-io-static/refs/heads/main/blog/tzolov/20260112/ask-user-question-tool-flow.png" width="800"/>
+
+The tool follows a question-answer workflow:
+1. **AI generates questions** - The agent determines it needs input and constructs questions (each containing question text, header, 2-4 options, and multiSelect flag) and calls the `askUserQuestion` tool function
+2. **User provides answers** - Your custom handler receives these questions, presents them through your UI, collects answers, and returns them to AI.
+3. **Ask additional questions** - Repeat 1 and 2 if necessary to collect additional user feedback
+4. **AI continues with context** - The agent uses the answers to provide tailored solutions
+
+Each question supports:
+- **Single-select or multi-select** - Choose one option or combine multiple
+- **Free-text input** - Users can always provide custom text beyond predefined options
+- **Rich context** - Every option includes a description explaining implications and trade-offs
+
+💡 **Portability and Model Agnostic - No Vendor Lock-In** - Unlike implementations tied to specific LLM platforms, this Spring AI implementation works across many LLM providers, letting you switch models without rewriting code or question handlers.
+
+💡 **Relation to MCP Elicitation** - AskUserQuestionTool serves as an agent-local approach to interactive user input, conceptually similar to the [MCP Elicitation](https://modelcontextprotocol.io/specification/2025-03-26/client/elicitation) capability. While MCP Elicitation enables MCP servers to request structured user input via JSON schemas, AskUserQuestionTool provides the same interactive pattern directly within your agent without requiring an MCP server. Spring AI also provides [full MCP Elicitation support](https://docs.spring.io/spring-ai/reference/api/mcp/mcp-annotations-client.html#_mcpelicitation) via the `@McpElicitation` annotation for server-driven scenarios.
+
+### Example: Travel Recommendation Assistant
+
+Here's how the tool works in practice with a travel recommendation use case from the [ask-user-question-demo](https://github.com/spring-ai-community/spring-ai-agent-utils/tree/main/examples/ask-user-question-demo):
+
+```
+USER: What EU country to visit next?
+
+Interests: What are your main interests when traveling?
+  1. History & Culture - Museums, historical sites, architecture
+  2. Nature & Outdoors - Hiking, beaches, mountains, national parks
+  3. Food & Drink - Culinary experiences, wine regions, food tours
+  4. Cities & Urban - Urban exploration, shopping, nightlife
+  (Enter numbers separated by commas, or type custom text)
+1,2
+
+Season: When are you planning to travel?
+  1. Spring - March to May - Mild temperatures, fewer tourists
+  2. Summer - June to August - Warm weather, peak season
+  3. Fall - September to November - Cooler temps, autumn colors
+  4. Winter - December to February - Christmas markets, winter sports
+  (Enter a number, or type custom text)
+3
+
+Budget: What's your approximate budget level for this trip?
+  1. ...
+...
+
+ASSISTANT: Based on your preferences for a fall trip with interests in history,
+culture, and nature on a moderate budget, while seeking a mix of popular spots
+and off-the-beaten-path experiences, here are excellent EU countries to consider:
+
+1. **Portugal** - Lisbon's historic districts, Douro Valley wine harvests,
+   Algarve coastlines. Affordable with pleasant fall temperatures.
+2. **Greece** - Ancient sites, beautiful islands, still warm for swimming
+   in fall with fewer crowds.
+3. **Slovenia** - Lake Bled, Julian Alps, spectacular autumn colors.
+   More affordable than neighboring Austria or Italy.
+```
+
+The agent gathered comprehensive requirements through interactive questions before providing personalized recommendations—no assumptions, no iteration needed.
+
+## Getting Started
+
+**1. Add the dependency:**
+
+```xml
+<dependency>
+    <groupId>org.springaicommunity</groupId>
+    <artifactId>spring-ai-agent-utils</artifactId>
+    <version>0.3.0</version>
+</dependency>
+```
+
+**2. Configure your agent:**
+
+```java
+ChatClient chatClient = chatClientBuilder
+    .defaultTools(AskUserQuestionTool.builder()
+        .questionHandler(this::handleQuestions)
+        .build())
+    .build();
+```
+
+**3. Implement your `QuestionHandler`** using the console or web examples below.
+
+The agent automatically invokes the tool when it needs clarification and uses the answers to provide tailored solutions.
+
+💡 **Demo:** [ask-user-question-demo](https://github.com/spring-ai-community/spring-ai-agent-utils/tree/main/examples/ask-user-question-demo)
+
+### QuestionHandler Examples
+
+#### Console-Based QuestionHandler
+
+A console-based implementation:
+
+```java
+private static Map<String, String> handleQuestions(List<Question> questions) {
+    Map<String, String> answers = new HashMap<>();
+    Scanner scanner = new Scanner(System.in);
+
+    for (Question q : questions) {
+        System.out.println("\n" + q.header() + ": " + q.question());
+
+        for (int i = 0; i < q.options().size(); i++) {
+            Option opt = q.options().get(i);
+            System.out.printf("  %d. %s - %s%n", i + 1, opt.label(), opt.description());
+        }
+
+        System.out.println(q.multiSelect()
+            ? "  (Enter numbers separated by commas, or type custom text)"
+            : "  (Enter a number, or type custom text)");
+
+        String response = scanner.nextLine().trim();
+
+        // Parse numeric selection(s) or use as free text
+        try {
+            String[] parts = response.split(",");
+            List<String> labels = new ArrayList<>();
+            for (String part : parts) {
+                int index = Integer.parseInt(part.trim()) - 1;
+                if (index >= 0 && index < q.options().size()) {
+                    labels.add(q.options().get(index).label());
+                }
+            }
+            answers.put(q.question(), labels.isEmpty() ? response : String.join(", ", labels));
+        } catch (NumberFormatException e) {
+            answers.put(q.question(), response);
+        }
+    }
+    return answers;
+}
+```
+
+The handler displays options, accepts numeric selections (like "1,2") or free text (like "A moderate budget"), and returns answers to the agent.
+
+#### Web-Based QuestionHandler
+
+For web applications, use `CompletableFuture` to bridge async UI interactions with the synchronous `QuestionHandler` API. Send questions to your frontend via WebSocket/SSE and block on `future.get()`. Complete the future when the user submits answers via a REST endpoint.
+
+## Conclusion
+
+**AskUserQuestionTool** transforms AI agents from assumption-based responders into collaborative partners that gather requirements before acting, delivering answers aligned with your needs on the first attempt.
+
+**Next in this series:**
+- [**TodoWriteTool**](https://spring.io/blog/2026/01/20/spring-ai-agentic-patterns-3-todowrite/) - Track multi-step workflows transparently
+- [**Subagent Orchestration**](https://spring.io/blog/2026/01/27/spring-ai-agentic-patterns-4-task-subagents) - Hierarchical multi-agent architectures
+- **Subagent Extension Framework** (coming soon) - Protocol-agnostic agent orchestration
+
+Start experimenting with the [ask-user-question-demo](https://github.com/spring-ai-community/spring-ai-agent-utils/tree/main/examples/ask-user-question-demo).
+
+## Resources
+
+- **GitHub Repository**: [spring-ai-agent-utils](https://github.com/spring-ai-community/spring-ai-agent-utils)
+- **AskUserQuestionTool Documentation**: [AskUserQuestionTool](https://github.com/spring-ai-community/spring-ai-agent-utils/blob/main/spring-ai-agent-utils/docs/AskUserQuestionTool.md)
+- **Spring AI Documentation**: [docs.spring.io/spring-ai](https://docs.spring.io/spring-ai/reference/)
+- **Demo**: [ask-user-question-demo](https://github.com/spring-ai-community/spring-ai-agent-utils/tree/main/examples/ask-user-question-demo) - Console-based interactive questioning (this post)
+- **Claude Agent SDK**: [User Input Documentation](https://platform.claude.com/docs/en/agent-sdk/user-input#question-format)
+
+#### Related Spring AI Blogs
+
+- [Agent Skills - Modular Capabilities](https://spring.io/blog/2026/01/13/spring-ai-generic-agent-skills) - Part 1 of this series
+- [Dynamic Tool Discovery](https://spring.io/blog/2025/12/11/spring-ai-tool-search-tools-tzolov) - Achieve 34-64% token savings
+- [Tool Argument Augmentation](https://spring.io/blog/2025/12/23/spring-ai-tool-argument-augmenter-tzolov) - Capture LLM reasoning during tool execution

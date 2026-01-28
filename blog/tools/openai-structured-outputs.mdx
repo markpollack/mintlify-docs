@@ -1,0 +1,147 @@
+---
+title: "Spring AI Embraces OpenAI's Structured Outputs: Enhancing JSON Response Reliability"
+sidebarTitle: "Embraces OpenAI's Structured..."
+description: "OpenAI recently [introduced](https://openai.com/index/introducing-structured-outputs-in-the-api/) a powerful feature called Structured Outputs, which ensures..."
+author: tzolov
+date: 2024-08-09
+---
+
+
+OpenAI recently [introduced](https://openai.com/index/introducing-structured-outputs-in-the-api/) a powerful feature called Structured Outputs, which ensures that AI-generated responses adhere strictly to a predefined JSON schema. This feature significantly improves the reliability and usability of AI-generated content in real-world applications. Today, we're excited to announce that Spring AI (1.0.0-SNAPSHOT) has [fully integrated support](https://docs.spring.io/spring-ai/reference/api/chat/openai-chat.html#_structured_outputs) for OpenAI's Structured Outputs, bringing this capability to Java developers in a seamless, Spring-native way.
+
+Following diagram shows how the new Structured Outputs feature extends the [OpenAI Chat API](https://platform.openai.com/docs/api-reference/chat):
+
+![Restored Spring AI (2)](https://static.spring.io/blog/contentful/20240923/Restored_Spring_AI__2_.jpg)
+
+> __Note:__ Spring AI already provides a powerful, [Model-agnostic Structured Output](https://docs.spring.io/spring-ai/reference/api/structured-output-converter.html) utilities that can be use with various AI models including the OpenAI.
+> The OpenAI Structured Outputs feature offers an additional, consistent, but a model specific solution, currently available only to the `gpt-4o`, `gpt-4o-mini` and later models.
+
+The OpenAI `Structured Outputs` feature guarantees the AI model will generate responses that conform to a supplied [JSON Schema](https://json-schema.org/overview/what-is-jsonschema). This addresses several common challenges in AI-powered applications: __Type Safety__: No more worrying about missing required keys or invalid enum values; __Explicit Refusals__: Safety-based model refusals become programmatically detectable; __Simplified Prompting__: Achieve consistent formatting without resorting to overly specific prompts.
+
+Spring AI allows developers to leverage this feature with minimal configuration. Let's explore how you can use it in your Spring applications.
+
+## Programmatic Configuration
+
+You can set the response format programmatically with the OpenAiChatOptions builder as shown below:
+
+    String jsonSchema = """
+      \{
+          "type": "object",
+          "properties": \{
+              "steps": \{
+                  "type": "array",
+                  "items": \{
+                      "type": "object",
+                      "properties": \{
+                          "explanation": \{ "type": "string" \},
+                          "output": \{ "type": "string" \}
+                      \},
+                      "required": ["explanation", "output"],
+                      "additionalProperties": false
+                  \}
+              \},
+              "final_answer": \{ "type": "string" \}
+          \},
+          "required": ["steps", "final_answer"],
+          "additionalProperties": false
+      \}
+      """;
+
+    Prompt prompt = new Prompt("how can I solve 8x + 7 = -23",
+      OpenAiChatOptions.builder()
+          .withModel(ChatModel.GPT_4_O_MINI)
+          .withResponseFormat(new ResponseFormat(ResponseFormat.Type.JSON_SCHEMA, jsonSchema))
+          .build());
+
+    ChatResponse response = this.openAiChatModel.call(prompt);
+
+__NOTE:__ You must adhere to the OpenAI [subset of the JSON Schema](https://platform.openai.com/docs/guides/structured-outputs/supported-schemas) language format.
+
+### Using the BeanOutputConverter
+
+Spring AI provides a convenient [BeanOutputConverter](https://docs.spring.io/spring-ai/reference/api/structured-output-converter.html#_bean_output_converter) utility that can automatically generate JSON schemas from your domain objects and convert structured responses into Java instances:
+
+    record MathReasoning(
+      @JsonProperty(required = true, value = "steps") Steps steps,
+      @JsonProperty(required = true, value = "final_answer") String finalAnswer) \{
+
+      record Steps(
+        @JsonProperty(required = true, value = "items") Items[] items) \{
+
+        record Items(
+          @JsonProperty(required = true, value = "explanation") String explanation,
+          @JsonProperty(required = true, value = "output") String output) \{\}
+      \}
+    \}
+
+    var outputConverter = new BeanOutputConverter`<>`(MathReasoning.class);
+
+    var jsonSchema = outputConverter.getJsonSchema();
+
+    Prompt prompt = new Prompt("how can I solve 8x + 7 = -23",
+      OpenAiChatOptions.builder()
+          .withModel(ChatModel.GPT_4_O_MINI)
+          .withResponseFormat(new ResponseFormat(ResponseFormat.Type.JSON_SCHEMA, jsonSchema))
+          .build());
+
+    ChatResponse response = this.openAiChatModel.call(prompt);
+    String content = response.getResult().getOutput().getContent();
+
+    MathReasoning mathReasoning = outputConverter.convert(content);
+
+__NOTE:__ Ensure you use the `@JsonProperty(required = true,…​)` annotation. 
+This is crucial for generating a schema that accurately marks fields as required. OpenAI [mandates](https://platform.openai.com/docs/guides/structured-outputs/all-fields-must-be-required) it for the structured response to function correctly.
+
+## Configuring via Application Properties
+
+Alternatively, when using the [OpenAI auto-configuration](https://docs.spring.io/spring-ai/reference/api/chat/openai-chat.html#_auto_configuration), you can configure the desired response format through the following [chat application properties](https://docs.spring.io/spring-ai/reference/api/chat/openai-chat.html#_chat_properties):
+
+    spring.ai.openai.api-key=YOUR_API_KEY
+    spring.ai.openai.chat.options.model=gpt-4o-mini
+
+    spring.ai.openai.chat.options.response-format.type=JSON_SCHEMA
+    spring.ai.openai.chat.options.response-format.name=MySchemaName
+    spring.ai.openai.chat.options.response-format.schema=\{"type":"object","properties":\{"steps":\{"type":"array","items":\{"type":"object","properties":\{"explanation":\{"type":"string"\},"output":\{"type":"string"\}\},"required":["explanation","output"],"additionalProperties":false\}\},"final_answer":\{"type":"string"\}\},"required":["steps","final_answer"],"additionalProperties":false\}
+    spring.ai.openai.chat.options.response-format.strict=true
+
+# Refusal Response
+
+When using Structured Outputs, OpenAI models may occasionally refuse to fulfill the request for safety reasons. Since a refusal does not necessarily follow the schema you have supplied in response_format, the API response includes a new field called `refusal` to indicate that the model refused to fulfill the request.
+
+Spring AI maps this refusal field to the [AssistantMessage](https://github.com/spring-projects/spring-ai/blob/main/spring-ai-core/src/main/java/org/springframework/ai/chat/messages/AssistantMessage.java#L34)'s metadata. Search by `refusal` key.
+
+# Future work
+
+We are exploring the possibilities to integrate the new OpenAI specific Structured Outputs features into Spring AI's Model-agnostic Structured Output utility set. 
+
+# References 
+
+For further information check the Spring AI and OpenAI reference documentations. 
+
+* [Spring AI OpenAI Structured Outputs](https://docs.spring.io/spring-ai/reference/api/chat/openai-chat.html#_structured_outputs)
+* [Spring AI, model-agnostic Structured Output converter](https://docs.spring.io/spring-ai/reference/api/structured-output-converter.html)
+* [Spring AI - Structured Output](https://spring.io/blog/2024/05/09/spring-ai-structured-output) (blog)
+* [OpenAI Structured Outputs](https://platform.openai.com/docs/guides/structured-outputs)
+
+* Spring AI Blogs:
+  * [Spring AI with Groq - a blazingly fast AI inference engine](https://spring.io/blog/2024/07/31/spring-ai-with-groq-a-blazingly-fast-ai-inference-engine)
+  * [Spring AI with Ollama Tool Support](https://spring.io/blog/2024/07/26/spring-ai-with-ollama-tool-support)
+  * [Spring AI - Structured Output](https://spring.io/blog/2024/05/09/spring-ai-structured-output) 
+  * [Spring AI - Multimodality - Orbis Sensualium Pictus](https://spring.io/blog/2024/04/19/spring-ai-multimodality-orbis-sensualium-pictus)
+  * [Function Calling in Java and Spring AI using the latest Mistral AI API](https://spring.io/blog/2024/03/06/function-calling-in-java-and-spring-ai-using-the-latest-mistral-ai-api)
+  * [Spring Cloud Function for Azure Function](https://spring.io/blog/2023/02/24/spring-cloud-function-for-azure-function)
+
+# Conclusion
+Spring AI's support for OpenAI's Structured Outputs feature makes the AI-powered applications more reliable and easier to develop. 
+By ensuring type safety and consistent, structured formatting, developers can focus on building innovative features rather than wrestling with unpredictable AI outputs.
+
+We can highlight the following benefits for Spring Developers:
+* __Seamless Integration__: Leverage Structured Outputs without leaving the Spring ecosystem.
+* __Type Safety__: Work with strongly-typed Java objects, reducing runtime errors.
+* __Flexibility__: Choose between programmatic and property-based configuration.
+* __Domain-Driven Design__: Use your domain objects to define the expected AI output structure.
+
+Please explore this new capability and share your experiences. 
+As always, we welcome feedback and contributions to help improve Spring AI and make it even more powerful and user-friendly.
+
+Stay tuned for more updates as we continue to enhance Spring AI's integration with cutting-edge AI technologies!

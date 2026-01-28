@@ -1,0 +1,206 @@
+---
+title: "Function Calling in Java and Spring AI using the latest Mistral AI API"
+sidebarTitle: "Function Calling in Java and Spring..."
+description: "*__UPDATE: As of March 13, 2024, Mistral AI has integrated support for parallel function calling into their large model, a feature that was absent at the time..."
+author: tzolov
+date: 2024-03-06
+---
+
+
+*__UPDATE: As of March 13, 2024, Mistral AI has integrated support for parallel function calling into their large model, a feature that was absent at the time of this blog's initial publication.__*
+
+Mistral AI, a leading developer of open-source large language models, [unveiled](https://docs.mistral.ai/guides/function-calling/) the addition of __Function Calling__ support to its cutting-edge models. 
+
+__Function Calling__ is a feature that facilitates the integration of LLM with external tools and APIs. 
+It enables the language model to request the execution of client-side functions, allowing it to access necessary run-time information or perform tasks dynamically. 
+
+Here, I'll discuss using Mistral AI's new Function Calling features with Java and particularly with [Spring AI](https://docs.spring.io/spring-ai/reference/0.8-SNAPSHOT/index.html).
+
+If you're not keen on delving into the details of the low-level Java client and want to make the most of your investment, feel free to skip the next paragraph and jump straight into the [Function Calling with Spring AI](#fc-with-spring-ai).
+
+# 1. Function Calling in Java
+If you want to test out the latest Mistral AI features using Java and [Spring AI](https://docs.spring.io/spring-ai/reference/0.8-SNAPSHOT/index.html), you will find that Mistral doesn't support Java clients and hasn't released the Function Calling API yet.
+
+Consequently, I had to resort exploring their JavaScript/Python clients to to figure it out. 
+Below, is a class diagram illustrating the various components of the API and their interconnections.
+
+![Mistral AI Class Diagram 1](https://static.spring.io/blog/contentful/20240923/Spring_AI__11_.jpg)
+
+Those familiar with the OpenAI API will notice that Mistral AI's new API is almost the same, with just a few small differences. 
+
+I've extended the [MistralAiApi](https://github.com/spring-projects/spring-ai/blob/main/models/spring-ai-mistral-ai/src/main/java/org/springframework/ai/mistralai/api/MistralAiApi.java)  Java client, originally created by Ricken Bazolo, to include the missing Function Calling features. 
+The updated client works well, as demonstrated by the [Payment Status demo](https://github.com/spring-projects/spring-ai/blob/main/models/spring-ai-mistral-ai/src/test/java/org/springframework/ai/mistralai/api/tool/PaymentStatusFunctionCallingIT.java).
+
+Since my focus is on Spring AI, I won't delve into the technical intricacies of the client here. However, if you're interested, you can explore the demo code and the cheat sheet diagram I've included below.
+
+![Mistral AI Function Calling Flow 3](https://static.spring.io/blog/contentful/20240923/Spring_AI__35_.jpg)
+
+It's important to note that the model doesn't directly call the function; rather, it generates JSON for you to call the function in your code and return the result to the model to continue the conversation.
+
+# <a name="fc-with-spring-ai">2. Function Calling with Spring AI</a>
+
+Spring AI simplifies Function Calling by allowing you to define a `@Bean` that returns a user-defined `java.util.Function`. It automatically infers the Function’s input type and generates JSON (or Open API) schema accordingly. Moreover, Spring AI takes care of the complex interactions with the AI Model by wrapping your POJO (the function) with the necessary adapter code, eliminating the need for you to write repetitive code.
+
+Furthermore, the Spring AI simplifies the code portability to other AI models that support Function Calling and allows the development of efficient, native (GraalVM) executables.
+
+## 2.1 How does it work?
+Suppose we want the AI model to respond with information that it does not have. 
+For example the status of your recent payment transactions as shown in this Mistral AI [tutorial](https://docs.mistral.ai/guides/function-calling).
+
+Lets re-implement the tutorial with Spring AI.
+
+Bootstrap a new Boot application using the [Initializr](https://start.spring.io) and add the MistralAI boot starter dependency to the POM:
+
+```xml
+<dependency>
+    <groupId>org.springframework.ai</groupId>
+    <artifactId>spring-ai-mistral-ai-spring-boot-starter</artifactId>
+    <version>0.8.1</version>
+</dependency>
+```
+
+Use the `application.properties` to configure it:
+
+```
+spring.ai.mistralai.api-key=${MISTRAL_AI_API_KEY}
+spring.ai.mistralai.chat.options.model=mistral-small-latest
+```
+
+This will provide you with fully functional `MistralAiChatClient`:
+
+```java
+@Autowired
+MistralAiChatClient chatClient;
+```
+
+Next let’s assume we have a dataset consisting of payment transactions: 
+
+```java
+public record Transaction(String transactionId) {}
+
+public record Status(String status) {}
+
+public static final Map<Transaction, Status> PAYMENT_DATA = Map.of(
+            new Transaction("T1001"), new Status("Paid"),
+            new Transaction("T1002"), new Status("Unpaid"),
+            new Transaction("T1003"), new Status("Paid"),
+            new Transaction("T1004"), new Status("Paid"),
+            new Transaction("T1005"), new Status("Pending"));
+```
+
+Users can ask questions about this dataset and use function calling to answer them.
+For example, let’s consider a function that retrieves the payment status given a transaction:
+
+```java
+@Bean
+@Description("Get payment status of a transaction")
+public Function<Transaction, Status> retrievePaymentStatus() {
+        return (transaction) -> new Status(PAYMENT_DATA.get(transaction).status());
+}
+```
+
+It uses a plain `java.util.Function` that takes a `Transaction` as an input and returns the `Status` for that transaction.
+Function is registered as `@Bean` and uses the `@Description` annotation to define function description. 
+Spring AI greatly simplifies code you need to write to support function invocation. 
+It brokers the function invocation conversation for you. 
+You can also reference multiple function bean names in your prompt.
+
+```java
+var options = MistralAiChatOptions.builder()
+   .withFunction("retrievePaymentStatus")
+   .build();
+
+ChatResponse paymentStatusResponse = chatClient.call(
+      new Prompt("What's the status of my transaction with id T1005?",  options);
+```
+
+We formulate the question within the prompt, including the associated function name in the prompt's options.
+The function name should match the Bean name.
+
+>__TIP__: Rather than repeatedly specifying the function name in prompt options for each request, you can consider configuring it once in the `application.properties` file like: `spring.ai.mistralai.chat.options.functions=retrievePaymentStatus`. This approach ensures the function is consistently enabled and accessible for all prompt questions. However, it's important to note that this method may result in the transmission of unnecessary context tokens for requests that do not require the function.
+
+That’s it. 
+Spring AI will facilitate the conversation for function invocation on your behalf. 
+You can print the response content:
+
+```java
+System.out.println(paymentStatusResponse.getResult().getOutput().getContent());
+```
+
+and expect a result like this:
+
+```
+The status of your transaction T1005 is "Pending".
+```
+
+> __TIP__: Check the __[MistralAi-AOT-Demo](https://github.com/tzolov/spring-ai-aot-tests/tree/main/mistralai-aot-demo)__, a simple, Spring Boot application showcasing the integration of Mistral AI with Spring AI. It encompasses various functionalities such as chat completion, streaming chat completion, embedding, and function calling. Additionally, instructions for native builds are included.
+
+Explore further details about the integration of Spring AI with Mistral AI in the reference documentation:
+
+* [Mistral AI Chat Client](https://docs.spring.io/spring-ai/reference/0.8-SNAPSHOT/api/clients/mistralai-chat.html)
+* [Mistral AI Function Calling](https://docs.spring.io/spring-ai/reference/0.8-SNAPSHOT/api/clients/functions/mistralai-chat-functions.html)
+
+## 2.2 Dynamic Prompt Options
+With __MistralAiChatOptions__, we can customize the default settings for each prompt request. For instance, we can switch the model to LARGE and adjust the temperature for a specific request as needed.:
+
+```java
+ChatResponse paymentStatusResponse = chatClient
+   .call(new Prompt("What's the status of my transaction with id T1005?",
+            MistralAiChatOptions.builder()
+               .withModel(MistralAiApi.ChatModel.LARGE.getValue())
+               .withTemperature(0.6f)
+               .withFunction("retrievePaymentStatus")
+               .build()));
+```
+
+Check the [MistralAiChatOptions](https://github.com/spring-projects/spring-ai/blob/main/models/spring-ai-mistral-ai/src/main/java/org/springframework/ai/mistralai/MistralAiChatOptions.java) javadocs for the available options.
+
+## 2.3 Code Portability
+Porting the code to other models supporting function calling is straightforward. For instance, to transition the code from using Mistral AI to Azure OpenAI, follow these steps:
+
+1. Replace the `spring-ai-mistral-ai-spring-boot-starter` dependency with `spring-ai-azure-openai-spring-boot-starter`.
+2. Adjust the `application.properties` file:
+   ```
+   spring.ai.azure.openai.api-key=${AZURE_OPENAI_API_KEY}
+   spring.ai.azure.openai.endpoint=${AZURE_OPENAI_ENDPOINT}
+   spring.ai.azure.openai.chat.options.model=gpt-35-turbo
+   ```
+3. Rename the `MistralAiChatOptions` class to `AzureOpenAiChatOptions` (this renaming may become unnecessary in future Spring AI versions).
+
+Currently, Spring AI offers function calling code portability between the following platforms:
+
+* [Spring AI Open AI](https://docs.spring.io/spring-ai/reference/0.8-SNAPSHOT/api/clients/functions/openai-chat-functions.html)
+* [Spring AI Vertex AI Gemini](https://docs.spring.io/spring-ai/reference/0.8-SNAPSHOT/api/clients/functions/vertexai-gemini-chat-functions.html)
+* [Spring AI Azure OpenAI](https://docs.spring.io/spring-ai/reference/0.8-SNAPSHOT/api/clients/functions/azure-open-ai-chat-functions.html)
+*  [Spring AI Mistral AI](https://docs.spring.io/spring-ai/reference/0.8-SNAPSHOT/api/clients/functions/mistralai-chat-functions.html)
+
+The [Spring-AI-Function-Calling-Portability](https://github.com/tzolov/spring-ai-function-calling-portability) sample application, demonstrates how you can re-use the same code and the same functions across multiple AI models.
+
+# 3. Build Native (GraalVM) Execution
+
+For building a native image you need to install a [GrallVM 21 JDK](https://www.graalvm.org/downloads/) and runt the following maven command:
+
+```
+./mvnw clean install -Pnative native:compile
+```
+
+It may take a couple of minutes to complete. 
+Then you can run the native executable:
+
+```
+./target/mistralai-aot-demo
+```
+
+# 4. Conclusions
+In this blog post we explore the Mistral AI Function Calling features in conjunction with Java and Spring AI. 
+
+The focus is on leveraging Function Calling with Spring AI, a framework that streamlines the integration process by handling the complexities of interaction with AI models, facilitating code portability and the development of efficient, native (GraalVM) executables.
+
+Key points covered include:
+
+* Overview of Function Calling with Spring AI, including demos and code examples.
+* Explain the dynamic Prompt Options and Code Portability across different AI models supported by Spring AI.
+* Building Native (GraalVM) Execution for enhanced performance
+
+The blog provides links to relevant documentation and demos, offering readers further exploration into Function Calling capabilities and code portability across different language model providers.
+

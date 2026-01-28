@@ -1,7 +1,7 @@
 {
   "$schema": "https://mintlify.com/schema.json",
   "name": "Spring AI Community",
-  "ignore": ["plans/**", "README.md", "PROJECT_METADATA_TEMPLATE.md", "CLAUDE.md"],
+  "ignore": ["plans/**", "README.md", "PROJECT_METADATA_TEMPLATE.md", "CLAUDE.md", "tools/**"],
   "logo": "/logo/universal.svg",
   "favicon": "/logo/favicon.svg",
   "colors": {
@@ -144,6 +144,97 @@
       "group": "Benchmarking",
       "pages": [
         "benchmarking/index"
+      ]
+    },
+    {
+      "group": "Blog",
+      "pages": [
+        "blog/index",
+        {
+          "group": "Agents",
+          "pages": [
+            "blog/agents/agentic-patterns-1",
+            "blog/agents/agent-skills",
+            "blog/agents/ask-user-question-tool",
+            "blog/agents/todowrite",
+            "blog/agents/task-subagents",
+            "blog/agents/anthropic-agentic-skills",
+            "blog/agents/agents-and-benchmarks",
+            "blog/agents/recursive-advisors",
+            "blog/agents/llm-as-judge"
+          ]
+        },
+        {
+          "group": "MCP",
+          "pages": [
+            "blog/mcp/mcp-announcement",
+            "blog/mcp/mcp-java-sdk-released",
+            "blog/mcp/mcp-intro",
+            "blog/mcp/mcp-dynamic-tool-updates",
+            "blog/mcp/mcp-server-security",
+            "blog/mcp/mcp-server-oauth2",
+            "blog/mcp/mcp-client-oauth2"
+          ]
+        },
+        {
+          "group": "Tools & Structured Output",
+          "pages": [
+            "blog/tools/function-calling-mistral",
+            "blog/tools/ollama-tool-support",
+            "blog/tools/structured-output",
+            "blog/tools/openai-structured-outputs",
+            "blog/tools/tool-response-formats",
+            "blog/tools/tool-search",
+            "blog/tools/tool-argument-augmenter"
+          ]
+        },
+        {
+          "group": "Model Providers",
+          "pages": [
+            "blog/model-providers/groq",
+            "blog/model-providers/nvidia",
+            "blog/model-providers/ollama-huggingface",
+            "blog/model-providers/bedrock-nova",
+            "blog/model-providers/docker-model-runner",
+            "blog/model-providers/anthropic-prompt-caching",
+            "blog/model-providers/bedrock-prompt-caching"
+          ]
+        },
+        {
+          "group": "Prompts & Output",
+          "pages": [
+            "blog/prompts-and-output/prompt-engineering-patterns",
+            "blog/prompts-and-output/multimodality",
+            "blog/prompts-and-output/audio-modality",
+            "blog/prompts-and-output/vector-search-methods"
+          ]
+        },
+        {
+          "group": "Getting Started",
+          "pages": [
+            "blog/getting-started/why-spring-ai",
+            "blog/getting-started/your-first-spring-ai-1.0-application",
+            "blog/getting-started/spring-tips-spring-ai",
+            "blog/getting-started/spring-tips-spring-ai-redux",
+            "blog/getting-started/spring-tips-vector-databases",
+            "blog/getting-started/update-to-snapshots",
+            "blog/getting-started/using-snapshots-part-2"
+          ]
+        },
+        {
+          "group": "Advisors & RAG",
+          "pages": [
+            "blog/advisors/spring-ai-advisors",
+            "blog/advisors/petclinic-part-1",
+            "blog/advisors/petclinic-part-2"
+          ]
+        },
+        {
+          "group": "Community",
+          "pages": [
+            "blog/community/community-announcement"
+          ]
+        }
       ]
     }
   ],

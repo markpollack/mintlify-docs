@@ -1,0 +1,55 @@
+---
+title: "Introducing Spring AI Agents and Spring AI Bench"
+sidebarTitle: "Introducing Spring AI Agents and..."
+description: "I'd like to introduce two new projects that are part of the [Spring AI Community](https://springaicommunity.mintlify.app) GitHub organization: [Spring AI..."
+author: markpollack
+date: 2025-10-28
+---
+
+I'd like to introduce two new projects that are part of the [Spring AI Community](https://springaicommunity.mintlify.app) GitHub organization: [Spring AI Agents](https://springaicommunity.mintlify.app/projects/incubating/spring-ai-agents), and [Spring AI Bench](https://springaicommunity.mintlify.app/projects/incubating/spring-ai-bench).  These two projects focus on using agentic coding tools—tools you likely already have in your enterprise.  
+
+In 2025 AI coding agents have matured to the point that they need to be seriously considered for enterprise Java development and general SDLC tasks.  CLI Tools like Claude Code, Google’s Gemini CLI, Amazon Q Developer, and OpenAI’s assistants are examples from leading large AI labs, but there are also smaller startups and open-source options.  These agentic coding tools can reason about architecture, grok large code bases, and hold great promise to help developers ship software faster.  They are often used in a “human in the loop” style, but they can also be instructed to execute autonomously until they determine the goal has been completed. 
+
+Spring AI Agents defines a lightweight but powerful portable abstraction: the AgentClient. It acts as a consistent interface for invoking autonomous CLI-based agents.  This allows developers to use the agentic tools they already have while providing flexibility to avoid locking into one single provider.  
+
+However, AgentClient is only one piece of the developer toolbox you need to be effective using agentic tools.  Spring AI Agents provides the following abstractions, which, when combined, can produce the most effective results:
+
+* **Goals:** the objectives that the agent is to complete, such as increasing code coverage, labeling issues, or reviewing and merging pull requests.  
+* **Context:** the data and environment the agent reasons over \- source files, logs, structured datasets, and documentation.  
+* **Tools:** Custom capabilities made available to the model to invoke when needed, most often exposed through the Model Context Protocol.  
+* **Judges:** evaluators that verify outcomes and assess quality against predefined criteria.  These can be deterministic, e.g. a code coverage number or AI-driven, using the LLM–as–Judge pattern.  
+* **Sandbox:** An abstraction of where the Agent will execute their work safely and reproducibly.  Current support is for local execution and in a Docker container.
+
+The companion project, Spring AI Bench, is a benchmark suite for evaluating agents on goal-directed **enterprise workflows.**  It evaluates how effectively different agents have completed their goals and can be considered the test harness that runs any agent via Spring AI Agents.
+
+The need for this project came from my investigation of existing Agentic benchmarks. I discovered they were focused primarily on Python and addressed only the use case of providing a code patch for GitHub issues. You see the following pattern in the literature: **SWE-bench** posts strong numbers on its **static, curated Python issue set, yet when a new set of curated issues is introduced**, the numbers drop dramatically. On SWE-bench Verified, agents score **60-75%** on static Python sets; on SWE-bench-Live, the same runs fall to **19%** - a **3× drop**. On **SWE-bench-Java**, Java tasks land around **~7-10%** compared to Python's ~75% on the same benchmark family, showing an **order of magnitude gap**. For engineering leaders, volatile scores translate into volatile decisions.
+
+None of this implies agents are weak; it implies the **yardsticks are dated**. The **SWE-agent** is thousands of lines of Python, but the \~100-line [**mini-SWE-agent**](https://github.com/SWE-agent/mini-swe-agent) (a simple agentic loop with chat memory and a single tool—bash) achieves competitive SWE-Bench results.  Turns out, there are no benchmarks to judge the capabilities of today's and tomorrow’s modern set of agentic CLI tools.  
+
+Early runs are promising. Multi-label issue classification across more than a hundred domain-specific labels matched or exceeded published F1 scores. PR-merge agents have processed hundreds of pull requests on the Spring AI code base, generating structured reports \- risk assessments, architecture notes, and backport analysis.  This significantly reduced review time while improving consistency.  Simple code coverage benchmarks revealed that while leading models can both achieve the same coverage number, there are differences in the code quality and level of instruction following between leading models.
+
+What's next: Both projects are incubating in the Spring AI Community organization.  Snapshot builds are available in Maven Central. We're also working with leaders of the [Developer Productivity AI Arena (DPAIA)](https://dpaia.dev/) initiative, which was created to address the issues I raised here.
+
+The Spring AI Community looks forward to your feedback as we move from the year of agents to a new era of using agents effectively.
+
+---
+
+## Resources
+
+**Projects:**
+- [Spring AI Bench](https://github.com/spring-ai-community/spring-ai-bench) - GitHub repository
+- [Spring AI Agents](https://spring-ai-community.github.io/spring-ai-agents/) - Documentation
+- [Spring AI Community](https://springaicommunity.mintlify.app) - Community portal
+- [Developer Productivity AI Arena (DPAIA)](https://dpaia.dev/) - Industry initiative for modern agent benchmarking
+
+**Research References:**
+- [SWE-bench](https://www.swebench.com/) - Original benchmark suite
+- [SWE-bench-Live](https://arxiv.org/abs/2505.23419) - Fresh issues benchmark showing 60%→19% drop
+- [SWE-bench-Java](https://arxiv.org/abs/2408.14354) - Multi-language benchmark showing Java ~7-10% vs Python ~75%
+- [mini-SWE-agent](https://github.com/SWE-agent/mini-swe-agent) - Minimal agent achieving competitive results
+- [Model Context Protocol](https://modelcontextprotocol.io/) - MCP specification
+- [BetterBench](https://betterbench.stanford.edu/) - Benchmark quality framework
+
+**Conference Talks:**
+- [Devoxx 2025: Spring AI Agents and Spring AI Bench](https://youtu.be/Sw3PlFXfWj4?si=2oMs91yejatCvhD5&t=2220) - Mark Pollack's talk introducing both projects
+

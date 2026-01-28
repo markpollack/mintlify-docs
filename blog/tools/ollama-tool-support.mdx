@@ -1,0 +1,138 @@
+---
+title: "Spring AI with Ollama Tool Support"
+sidebarTitle: "with Ollama Tool Support"
+description: "Earlier this week, Ollama [introduced](https://ollama.com/blog/tool-support) an exciting new feature: tool support for Large Language Models (LLMs)."
+author: tzolov
+date: 2024-07-26
+---
+
+Earlier this week, Ollama [introduced](https://ollama.com/blog/tool-support) an exciting new feature: tool support for Large Language Models (LLMs). 
+
+Today, we're thrilled to announce that [Spring AI](https://docs.spring.io/spring-ai/reference/api/chat/ollama-chat.html#_function_calling) (1.0.0-SNAPSHOT) has fully embraced this powerful feature, bringing Ollama's function calling capabilities to the Spring ecosystem.
+
+Ollama's tool support allows models to make decisions about when to call external functions and how to use the returned data. This opens up a world of possibilities, from accessing real-time information to performing complex calculations. Spring AI takes this concept and integrates it seamlessly with the Spring ecosystem, making it incredibly easy for Java developers to leverage this functionality in their applications. Key Features of Spring AI's Ollama Function Calling Support includes:
+
+* Easy Integration: Register your Java functions as Spring beans and use them with Ollama models.
+* Flexible Configuration: Multiple ways to register and configure functions.
+* Automatic JSON Schema Generation: Spring AI handles the conversion of your Java methods into JSON schemas that Ollama can understand.
+* Support for Multiple Functions: Register and use multiple functions in a single chat session.
+* Runtime Function Selection: Dynamically choose which functions to enable for each prompt.
+* Code Portability: Reuse your application code without changes with  different LLM providers such as OpenAI, Mistral, VertexAI, Anthropic, Groq without code changes.
+
+# How It Works
+
+- Define custom Java functions and register them with Spring AI.
+
+![Restored Spring AI (1)](https://static.spring.io/blog/contentful/20240923/Restored_Spring_AI__1_.jpg)
+
+- Perform chat request that might need function calling to complete the answer.
+- When the AI model determines it needs to call a function, it generates a JSON object with the function name and arguments.
+- Spring AI intercepts this request, calls your Java function, and returns the result to the model.
+- The model incorporates the function's output into its response.
+
+# Getting Started
+
+#### Prerequisite 
+
+You first need to run Ollama (`0.2.8+`) on your local machine. Refer to the official Ollama project [README](https://github.com/ollama/ollama) to get started running models on your local machine.
+Then pull a tools supporting model such as `Llama 3.1`, `Mistral`, `Firefunction v2`, `Command-R +`...
+A list of supported models can be found under the [Tools category on the models page](https://ollama.com/search?c=tools).
+
+    ollama run mistral
+
+#### Dependencies
+
+To start using Ollama function calling with Spring AI, add the following dependency to your project:
+
+    `<dependency>`
+      `<groupId>`org.springframework.ai`</groupId>`
+      `<artifactId>`spring-ai-ollama-spring-boot-starter`</artifactId>`
+    `</dependency>`
+
+Refer to the [Dependency Management](https://docs.spring.io/spring-ai/reference/getting-started.html#dependency-management) section to add the Spring AI BOM to your build file.
+
+#### Example
+
+Here's a simple example of how to use Ollama function calling with Spring AI:
+
+    @SpringBootApplication
+    public class OllamaApplication \{
+
+    	public static void main(String[] args) \{
+    		SpringApplication.run(OllamaApplication.class, args);
+    	\}
+
+    	@Bean
+    	CommandLineRunner runner(ChatClient.Builder chatClientBuilder) \{
+    		return args -> \{
+    			var chatClient = chatClientBuilder.build();
+
+    			var response = chatClient.prompt()
+    				.user("What is the weather in Amsterdam and Paris?")
+    				.functions("weatherFunction") // reference by bean name.
+    				.call()
+    				.content();
+
+    			System.out.println(response);
+    		\};
+    	\}
+
+    	@Bean
+    	@Description("Get the weather in location")
+    	public Function`<WeatherRequest, WeatherResponse>` weatherFunction() \{
+    		return new MockWeatherService();
+    	\}
+
+    	public static class MockWeatherService implements Function`<WeatherRequest, WeatherResponse>` \{
+
+    		public record WeatherRequest(String location, String unit) \{\}
+    		public record WeatherResponse(double temp, String unit) \{\}
+
+    		@Override
+    		public WeatherResponse apply(WeatherRequest request) \{
+    			double temperature = request.location().contains("Amsterdam") ? 20 : 25;
+    			return new WeatherResponse(temperature, request.unit);
+    		\}
+    	\}
+    \}
+
+In this example, when the model needs weather information, it will automatically call the `weatherFunction` bean, which can then fetch real-time weather data.
+
+The expected response looks like this: "*The weather in Amsterdam is currently 20 degrees Celsius, and the weather in Paris is currently 25 degrees Celsius.*"
+
+The full example code is available at: https://github.com/tzolov/ollama-tools
+
+#### OpenAI Compatibility
+
+Ollama is OpenAI API compatible and you can use the [Spring AI OpenAI](https://docs.spring.io/spring-ai/reference/api/chat/openai-chat.html) client to talk to Ollama and use tools. 
+For this you need to use the OpenAI client but set the base-url:  `spring.ai.openai.chat.base-url=http://localhost:11434` and select one of the provided Ollama Tools models: `spring.ai.openai.chat.options.model=mistral`.
+
+Check the [OllamaWithOpenAiChatModelIT.java](https://github.com/spring-projects/spring-ai/blob/main/models/spring-ai-openai/src/test/java/org/springframework/ai/openai/chat/OllamaWithOpenAiChatModelIT.java) tests for examples of using Ollama over Spring AI OpenAI.
+
+#### Limitations
+
+As stated in the Ollama [blog post](https://ollama.com/blog/tool-support), currently their API does not support `Streaming Tool Calls` nor `Tool choice`.
+
+Once those limitations are resolved, Spring AI is ready to provide support for them as well. 
+
+# Further Information
+
+* [Spring AI Reference Doc](https://docs.spring.io/spring-ai/reference/index.html)
+* [Spring AI Ollama Integration](https://docs.spring.io/spring-ai/reference/api/chat/ollama-chat.html)
+* Related tests: [OllamaChatModelFunctionCallingIT](https://github.com/spring-projects/spring-ai/blob/main/models/spring-ai-ollama/src/test/java/org/springframework/ai/ollama/OllamaChatModelFunctionCallingIT.java) , [FunctionCallbackWrapperIT](https://github.com/spring-projects/spring-ai/blob/main/spring-ai-spring-boot-autoconfigure/src/test/java/org/springframework/ai/autoconfigure/ollama/tool/FunctionCallbackWrapperIT.java), [FunctionCallbackInPromptIT](https://github.com/spring-projects/spring-ai/blob/main/spring-ai-spring-boot-autoconfigure/src/test/java/org/springframework/ai/autoconfigure/ollama/tool/FunctionCallbackInPromptIT.java)
+
+# Conclusion
+
+By building on Ollama's innovative tool support and integrating it into the Spring ecosystem, Spring AI has created a powerful new way for Java developers to create AI-enhanced applications. This feature opens up exciting possibilities for creating more dynamic and responsive AI-powered systems that can interact with real-world data and services.
+
+Some benefits of using Spring AI's Ollama Function Calling include:
+
+- Extend AI Capabilities: Easily augment AI models with custom functionality and real-time data.
+- Seamless Integration: Leverage existing Spring beans and infrastructure in your AI applications.
+- Type-Safe Development: Use strongly-typed Java functions instead of dealing with raw JSON.
+- Reduced Boilerplate: Spring AI handles the complexities of function calling, allowing you to focus on your business logic.
+
+We encourage you to try out this new feature and let us know how you're using it in your projects. For more detailed information and advanced usage, check out our official documentation.
+
+Happy coding with Spring AI and Ollama!
+

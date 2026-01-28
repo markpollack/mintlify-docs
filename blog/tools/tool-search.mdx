@@ -1,0 +1,269 @@
+---
+title: "Smart Tool Selection: Achieving 34-64% Token Savings with Spring AI's Dynamic Tool Discovery"
+sidebarTitle: "Smart Tool Selection: Achieving..."
+description: "As AI agents connect to more services—Slack, GitHub, Jira, MCP servers—tool libraries grow rapidly. A typical multi-server setup can easily have 50+ tools..."
+author: tzolov
+date: 2025-12-11
+---
+
+As AI agents connect to more services—Slack, GitHub, Jira, MCP servers—tool libraries grow rapidly. A typical multi-server setup can easily have 50+ tools consuming **55,000+ tokens** before any conversation starts. Worse, tool selection accuracy degrades when models face 30+ similarly-named tools.
+
+<img style={{display: "block", margin: "1px auto", padding: "7px"}} src="https://raw.githubusercontent.com/spring-io/spring-io-static/refs/heads/main/blog/tzolov/20251208/spring-ai-tool-search-tool-overview.png" width="250" align="right"/>
+
+
+The **[Tool Search Tool](https://www.anthropic.com/engineering/advanced-tool-use)** pattern, pioneered by Anthropic, addresses this: instead of loading all tool definitions upfront, the model discovers tools on-demand. It receives only a search tool initially, queries for capabilities when needed, and gets relevant tool definitions expanded into context. This achieves **significant token savings** while maintaining access to hundreds of tools.
+
+**The key insight:** While Anthropic introduced this pattern for Claude, we can implement the same approach for **any LLM** using Spring AI's **[Recursive Advisors](https://docs.spring.io/spring-ai/reference/api/advisors-recursive.html)**. 
+Spring AI provides a portable abstraction that makes dynamic tool discovery work across OpenAI, Anthropic, Gemini, Ollama, Azure OpenAI, and any other LLM provider supported by Spring AI.
+
+**Our preliminary benchmarks show Spring AI's Tool Search Tool implementation achieves 34-64% token reduction** across OpenAI, Anthropic, and Gemini models while maintaining full access to hundreds of tools.
+
+> The Spring AI Tool Search Tool project is available on: [spring-ai-tool-search-tool](https://github.com/spring-ai-community/spring-ai-tool-search-tool).
+
+## How Tool Calling Works
+
+First, let's understand how Spring AI's [tool calling](https://docs.spring.io/spring-ai/reference/api/tools.html) works when using the [ToolCallAdvisor](https://docs.spring.io/spring-ai/reference/api/advisors-recursive.html#_toolcalladvisor) - a special recursive advisor that:
+
+<img style={{display: "block", margin: "0px auto", padding: "15px"}} src="https://raw.githubusercontent.com/spring-io/spring-io-static/refs/heads/main/blog/tzolov/20251208/spring-ai-tool-calling-flow.png" width="500" align="left"/>
+
+1. **Intercepts the ChatClient request** before it reaches the LLM
+2. **Includes tool definitions** in the prompt sent to the model - for all registered tools!
+3. **Detects tool call requests** in the model's response
+4. **Executes the requested tools** using the `ToolCallingManager`
+5. **Loops back** with tool results until the model provides a final answer
+
+The tool execution happens in a **recursive loop** - the advisor keeps calling the LLM until no more tool calls are requested. 
+
+## The Problem
+
+The standard tool calling flow (such as `ToolCallAdvisor`) sends **all tool definitions** to the LLM upfront. This creates three major issues with large tool collections:
+
+- **Context bloat** - Massive token consumption before any conversation begins
+- **Tool confusion** - Models struggle to choose correctly when facing 30+ similar tools  
+- **Higher costs** - Paying for unused tool definitions in every request
+
+## The Tool Search Tool Solution
+
+By extending Spring AI's `ToolCallAdvisor`, we've created a `ToolSearchToolCallAdvisor` that implements dynamic tool discovery. It intercepts the tool calling loop to selectively inject tools based on what the model discovers it needs:
+
+<img style={{display: "block", margin: "auto"}} src="https://raw.githubusercontent.com/spring-io/spring-io-static/refs/heads/main/blog/tzolov/20251208/spring-ai-tool-search-tool-calling-flow.png" width="600"/>
+
+The flow works as follows:
+
+1. **Indexing**: At conversation start, all registered tools are indexed in the `ToolSearcher` (but NOT sent to the LLM)
+2. **Initial Request**: Only the **Tool Search Tool (TST)** definition is sent to the LLM - saving context
+3. **Discovery Call**: When the LLM needs capabilities, it calls the TST with a search query
+4. **Search & Expand**: The `ToolSearcher` finds matching tools (e.g., "Tool XYZ") and their definitions are added to the next request
+5. **Tool Invocation**: The LLM now sees both TST and the discovered tool definitions, and can call the actual tool
+6. **Tool Execution**: The discovered tool is executed and results returned to the LLM
+7. **Response**: The LLM generates the final answer using the tool results
+
+In code, this looks like this: 
+
+```java
+var toolSearchToolCallAdvisor = ToolSearchToolCallAdvisor.builder()
+    .toolSearcher(toolSearcher)
+    .maxResults(5)
+    .build();
+
+ChatClient chatClient = chatClientBuilder
+    .defaultTools(new MyTools())  // 100s of tools registered but NOT sent to LLM initially
+    .defaultAdvisors(toolSearchToolCallAdvisor) // Activate Tool Search Tool
+    .build();
+```
+
+### Pluggable Search Strategies
+
+The `ToolSearcher` interface abstracts the search implementation, supporting multiple strategies (see [tool-searchers](https://github.com/spring-ai-community/spring-ai-tool-search-tool/tree/main/tool-searchers) for implementations):
+
+| Strategy | Implementation | Best For |
+|----------|---------------|----------|
+| **Semantic** | `VectorToolSearcher` | Natural language queries, fuzzy matching |
+| **Keyword** | `LuceneToolSearcher` | Exact term matching, known tool names |
+| **Regex** | `RegexToolSearcher` | Tool name patterns (`get_*_data`) |
+
+## Getting Started
+
+The project's GitHub repository is: [spring-ai-tool-search-tool](https://github.com/spring-ai-community/spring-ai-tool-search-tool).
+
+For detailed setup instructions and code examples, see the [Quick Start guide (v1.x)](https://github.com/spring-ai-community/spring-ai-tool-search-tool/tree/1.0.x?tab=readme-ov-file#quick-start) and the related [example application (v1.x)](https://github.com/spring-ai-community/spring-ai-tool-search-tool/tree/1.0.x/examples/tool-search-tool-demo).
+
+**Maven Central (1.0.1):**
+
+```xml
+<dependency>
+    <groupId>org.springaicommunity</groupId>
+    <artifactId>tool-search-tool</artifactId>
+    <version>1.0.1</version>
+</dependency>
+
+<!-- Choose a search strategy -->
+<dependency>
+    <groupId>org.springaicommunity</groupId>
+    <artifactId>tool-searcher-lucene</artifactId>
+    <version>1.0.1</version>
+</dependency>
+```
+
+*Version [v1.0.x](https://github.com/spring-ai-community/spring-ai-tool-search-tool/tree/1.0.x) is Spring AI 1.1.x / Spring Boot 3 compatible and [v2.0.x](https://github.com/spring-ai-community/spring-ai-tool-search-tool) is Spring AI 2.x / Spring Boot 4 compatible.*
+
+**Example Usage**
+
+<div style={{fontSize: "0.9em"}}>
+
+```java
+@SpringBootApplication
+public class Application {
+
+    @Bean
+    CommandLineRunner demo(ChatClient.Builder builder, ToolSearcher toolSearcher) {
+        return args -> {
+            var advisor = ToolSearchToolCallAdvisor.builder()
+                .toolSearcher(toolSearcher)
+                .build();
+
+            ChatClient chatClient = builder
+                .defaultTools(new MyTools())
+                .defaultAdvisors(advisor)
+                .build();
+
+            var answer = chatClient.prompt("""
+                Help me plan what to wear today in Amsterdam.
+                Please suggest clothing shops that are open right now.
+                """).call().content();
+            
+            System.out.println(answer);
+        };
+    }
+
+    static class MyTools {
+
+		@Tool(description = "Get the weather for a given location at a given time")
+		public String weather(String location, 
+            @ToolParam(description = "YYYY-MM-DDTHH:mm") String atTime) {...}
+
+		@Tool(description = "Get clothing shop names for a given location at a given time")
+		public List<String> clothing(String location,
+				@ToolParam(description = "YYYY-MM-DDTHH:mm") String openAtTime) {...}
+
+		@Tool(description = "Current date and time for a given location")
+		public String currentTime(String location) {...}
+        
+        // ... potentially hundreds more tools
+    }
+}
+```
+
+</div>
+
+
+For the example above, the flow would be:
+
+<div style={{fontSize: "0.9em"}}>
+
+1. **User Request**: *"Help me plan what to wear today in Amsterdam. Please suggest clothing shops that are open right now."*
+2. **Initialization**: Index all tools: `weather`, `clothing`, `currentTime` (+ potentially 100s more)
+3. **First LLM Call** - LLM sees only `toolSearchTool`
+   - LLM calls `toolSearchTool(query="current time date")` → `["currentTime"]`
+4. **Second LLM Call** - LLM sees `toolSearchTool` + `currentTime`
+   - LLM calls `currentTime("Amsterdam")` → `"2025-12-08T11:30"`
+   - LLM calls `toolSearchTool(query="weather location")` → `["weather"]`   
+5. **Third LLM Call** - LLM sees `toolSearchTool` + `currentTime` + `weather`
+   - LLM calls `weather("Amsterdam")` → `"Sunny, 15°C"`
+   - LLM calls `toolSearchTool(query="clothing shops")` → `["clothing"]`
+6. **Fourth LLM Call** - LLM sees `toolSearchTool` + `currentTime` + `weather` + `clothing`
+   - LLM calls `clothing("Amsterdam", "2025-12-08T11:30")` → `["H&M", "Zara", "Uniqlo"]`
+7. **Final Response**: *"Based on the sunny 15°C weather in Amsterdam, I recommend light layers. Here are clothing shops open now: H&M, Zara, ..."*
+
+</div>
+
+## Performance Measurements
+
+> ⚠️ **Disclaimer:** These are preliminary, manual measurements taken after a few runs. They are not averaged across multiple iterations and should be considered illustrative rather than representative.
+
+
+To quantify the token savings, we ran preliminary benchmarks using the [demo application](https://github.com/spring-ai-community/spring-ai-tool-search-tool/tree/main/examples/tool-search-tool-demo) with the following setup:
+
+- **Task**: *"Help me plan what to wear today in Amsterdam. Please suggest clothing shops that are open right now."*
+- **28 total tools**: 3 relevant tools (`weather`, `clothing`, `currentTime`) + 25 unrelated "dummy" tools, deliberately **not relevant** to the weather/clothing task, demonstrating how the tool search efficiently discovers only the needed tools among many unrelated options.
+
+- **Search strategies**: Lucene (keyword-based) and VectorStore (semantic)
+- **Models tested**: Gemini (`gemini-3-pro-preview`), OpenAI (`gpt-5-mini-2025-08-07`), Anthropic (`claude-sonnet-4-5-20250929`)
+
+The measurements are collected using a custom [TokenCounterAdvisor](https://github.com/spring-ai-community/spring-ai-tool-search-tool/blob/main/examples/tool-search-tool-demo/src/main/java/org/springaicommunity/tool/search/TokenCounterAdvisor.java) that tracks and aggregates the token usage.
+
+#### Results with Lucene Search
+
+<div style={{fontSize: "0.8em"}}>
+
+| Model | Approach | Total Tokens | Prompt Tokens | Completion Tokens | Requests | **Savings** |
+|-------|----------|--------------|---------------|-------------------|----------|-------------|
+| **Gemini** | With TST | 2,165 | 1,412 | 231 | 4 | **60%** |
+| | Without TST | 5,375 | 4,800 | 176 | 3 | — |
+| **OpenAI** | With TST | 4,706 | 2,770 | 1,936 | 5 | **34%** |
+| | Without TST | 7,175 | 5,765 | 1,410 | 3 | — |
+| **Anthropic** | With TST | 6,273 | 5,638 | 635 | 5 | **64%** |
+| | Without TST | 17,342 | 16,752 | 590 | 4 | — |
+
+</div>
+
+#### Results with VectorStore Search
+
+<div style={{fontSize: "0.8em"}}>
+
+| Model | Approach | Total Tokens | Prompt Tokens | Completion Tokens | Requests | **Savings** |
+|-------|----------|--------------|---------------|-------------------|----------|-------------|
+| **Gemini** | With TST | 2,214 | 1,502 | 234 | 4 | **57%** |
+| | Without TST | 5,122 | 4,767 | 73 | 3 | — |
+| **OpenAI** | With TST | 3,697 | 2,109 | 1,588 | 4 | **47%** |
+| | Without TST | 6,959 | 5,771 | 1,188 | 3 | — |
+| **Anthropic** | With TST | 6,319 | 5,642 | 677 | 5 | **63%** |
+| | Without TST | 17,291 | 16,744 | 547 | 4 | — |
+
+</div>
+
+
+#### Key Observations
+
+- **Significant token savings across all models**: The Tool Search Tool pattern achieved **34-64% reduction** in total token consumption depending on the model and search strategy.
+- **Prompt tokens are the key driver**: The savings come primarily from reduced prompt tokens - with TST, only discovered tool definitions are included rather than all 28 tools upfront.
+- **Trade-off: More requests, fewer tokens**: TST requires 4-5 requests vs 3-4 without, but the total token cost is significantly lower.
+- **Both search strategies perform similarly**: Lucene and VectorStore produced comparable results, with VectorStore showing slightly better efficiency for OpenAI in this test.
+- **All models successfully completed the task**: All three models (Gemini, OpenAI, Anthropic) figured out that they needed to call `currentTime` before invoking the other tools, demonstrating correct reasoning about tool dependencies.
+- **Different tool discovery strategies**: Models exhibited varying approaches—some managed to request all necessary tools upfront, while others discovered them one by one. However, all models leveraged parallel tool calling when possible to optimize execution.
+- **Older models may struggle**: The older model versions may have difficulty with the tool search pattern, potentially missing required tools or making suboptimal discovery decisions. Consider adding a custom [systemMessageSuffix](https://github.com/spring-ai-community/spring-ai-tool-search-tool/tree/main/tool-search-tool#toolsearchtoolcalladvisorbuilder) to provide additional guidance to the model, experiment with different tool-searcher configurations or pair this approach with the [LLM as Judge pattern](https://spring.io/blog/2025/11/10/spring-ai-llm-as-judge-blog-post) to ensure reliable and consistent behavior across different models.
+
+## When to Use
+
+| Tool Search Tool Approach | Traditional Approach |
+|-------------|-----------------------------------|
+| 20+ tools in your system | Small tool library (&lt;20 tools) |
+| Tool definitions consuming >5K tokens | All tools frequently used in every session |
+| Building MCP-powered systems with multiple servers | Very compact tool definitions |
+| Experiencing tool selection accuracy issues | |
+
+
+## Next Steps
+
+As the [Tool Search Tool project](https://github.com/spring-ai-community/spring-ai-tool-search-tool) matures and proves its value within the [Spring AI Community](https://github.com/spring-ai-community), we may consider adding it to the core Spring AI project.
+
+For **deterministic tool selection without LLM involvement**, explore the [Pre-Select Tool Demo](https://github.com/spring-ai-community/spring-ai-tool-search-tool/tree/main/examples/pre-select-tool-demo) and the experimental [`PreSelectToolCallAdvisor`](https://github.com/spring-ai-community/spring-ai-tool-search-tool/blob/main/examples/pre-select-tool-demo/src/main/java/org/springaicommunity/tool/search/PreSelectToolCallAdvisor.java). 
+Unlike the agentic `ToolSearchToolCallAdvisor`, this advisor pre-selects tools based on message content **before** the LLM call—ideal for **Chain of Thought patterns** where a preliminary reasoning step explicitly names the required tools.
+
+Also, you can consider combining the Tool Search Tool with [LLM-as-a-Judge patterns](https://spring.io/blog/2025/11/10/spring-ai-llm-as-judge-blog-post) to ensure discovered tools actually fulfill the user's task. A judge model could evaluate whether the dynamically selected tools produced satisfactory results and improve the tool discovery if needed.
+
+Try the current implementation and provide feedback to help shape its evolution into a first-class Spring AI feature.
+
+## Conclusion
+
+The Tool Search Tool pattern is a step toward scalable AI agents. By combining Anthropic's innovative approach with Spring AI's **portable abstraction**, we can build systems that efficiently manage thousands of tools while maintaining high accuracy **across any LLM provider**.
+
+**The power of Spring AI's recursive advisor architecture** is that it allows us to implement sophisticated tool discovery workflows that work universally - whether you're using OpenAI's GPT models, Anthropic's Claude, local Ollama models, or any other LLM supported by Spring AI. You get the same dynamic tool discovery benefits without being locked into a specific provider's native implementation.
+
+## References
+
+- **Anthropic Tool Search Tool Pattern**: [Advanced Tool Use](https://www.anthropic.com/engineering/advanced-tool-use)
+- **Spring AI Tool Search Tool Implementation**: [GitHub Repository](https://github.com/spring-ai-community/spring-ai-tool-search-tool)
+- **Spring AI Tools Documentation**: [Tools API Reference](https://docs.spring.io/spring-ai/reference/api/tools.html)
+- **Spring AI Recursive Advisors**: [Advisors API Reference](https://docs.spring.io/spring-ai/reference/api/advisors-recursive.html)
+- **Spring AI Recursive Advisors Blog**: [Spring AI Recursive Advisors](https://spring.io/blog/2025/11/04/spring-ai-recursive-advisors)

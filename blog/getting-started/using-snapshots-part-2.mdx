@@ -1,0 +1,107 @@
+---
+title: "Using Spring AI 1.0.0-SNAPSHOT: Part 2 - Important Changes and Updates"
+sidebarTitle: "Using Spring AI 1.0.0-SNAPSHOT:..."
+description: "This blog post is a continuation of our previous article [Using Spring AI 1.0.0-SNAPSHOT: Important Changes and..."
+author: markpollack
+date: 2025-04-04
+---
+
+# Using Spring AI 1.0.0-SNAPSHOT: Part 2 - Important Changes and Updates
+
+This blog post is a continuation of our previous article [Using Spring AI 1.0.0-SNAPSHOT: Important Changes and Updates](https://spring.io/blog/2025/03/25/spring-ai-using-snapshots), where we introduced the significant changes to artifact IDs, dependency management, and autoconfiguration in Spring AI 1.0.0-SNAPSHOT.
+
+Since publishing that article, the Spring team has released an updates to the snapshots, In this follow-up article, we'll explore the latest changes and provide additional guidance for developers working with the snapshot versions. For comprehensive details, refer to the [Spring AI Upgrade Notes](https://docs.spring.io/spring-ai/reference/upgrade-notes.html).
+
+## Module Restructuring
+
+As of April 4, 2025, the main branch has undergone significant changes to the module and artifact structure. Previously, `spring-ai-core` contained all central interfaces, but this has now been split into specialized domain modules to reduce unnecessary dependencies in your applications.
+
+### Package Name Changes
+
+Some classes have moved to new packages:
+
+- `ContentFormatTransformer` and `KeywordMetadataEnricher` moved from `org.springframework.ai.transformer` to `org.springframework.ai.chat.transformer`
+- `Content`, `MediaContent`, and `Media` moved from `org.springframework.ai.model` to `org.springframework.ai.content`
+
+### New Module Structure
+
+![Spring AI Dependencies](https://raw.githubusercontent.com/spring-projects/spring-ai/main/spring-ai-docs/src/main/antora/modules/ROOT/images/spring-ai-dependencies.png)
+
+#### spring-ai-commons
+
+Base module with no dependencies on other Spring AI modules. Contains:
+- Core domain models (`Document`, `TextSplitter`)
+- JSON utilities and resource handling
+- Structured logging and observability support
+
+#### spring-ai-model
+
+Provides AI capability abstractions:
+- Interfaces like `ChatModel`, `EmbeddingModel`, and `ImageModel`
+- Message types and prompt templates
+- Function-calling framework (`ToolDefinition`, `ToolCallback`)
+- Content filtering and observation support
+
+#### spring-ai-vector-store
+
+Unified vector database abstraction:
+- `VectorStore` interface for similarity search
+- Advanced filtering with SQL-like expressions
+- `SimpleVectorStore` for in-memory usage
+- Batching support for embeddings
+
+#### spring-ai-client-chat
+
+High-level conversational AI APIs:
+- `ChatClient` interface
+- Conversation persistence via `ChatMemory`
+- Response conversion with `OutputConverter`
+- Advisor-based interception
+- Synchronous and reactive streaming support
+
+#### spring-ai-advisors-vector-store
+
+Bridges chat with vector stores for RAG:
+- `QuestionAnswerAdvisor`: injects context into prompts
+- `VectorStoreChatMemoryAdvisor`: stores/retrieves conversation history
+
+#### spring-ai-model-chat-memory-cassandra
+
+Apache Cassandra persistence for `ChatMemory`:
+- `CassandraChatMemory` implementation
+- Type-safe CQL with Cassandra's QueryBuilder
+
+#### spring-ai-model-chat-memory-neo4j
+
+Neo4j graph database persistence for chat conversations.
+
+#### spring-ai-rag
+
+Comprehensive framework for Retrieval Augmented Generation:
+- Modular architecture for RAG pipelines
+- `RetrievalAugmentationAdvisor` as main entry point
+- Functional programming principles with composable components
+
+## Dependency Hierarchy
+
+The new dependency structure follows this pattern:
+
+1. `spring-ai-commons` (foundation)
+2. `spring-ai-model` (depends on commons)
+3. `spring-ai-vector-store` and `spring-ai-client-chat` (both depend on model)
+4. `spring-ai-advisors-vector-store` and `spring-ai-rag` (depend on both client-chat and vector-store)
+5. `spring-ai-model-chat-memory-*` modules (depend on client-chat)
+
+## Migration Guide
+
+To migrate your existing Spring AI applications:
+
+1. If you are using the Spring Boot starters, you don't need to do anything as you will pick up the new artifacts as necessary.
+2. Refactor imports for relocated classes (your IDE should assist with this)
+3. If using `spring-ai-core` directly, replace with the appropriate new modules
+
+## Conclusion
+
+These changes represent a significant improvement in the Spring AI architecture, allowing for more targeted dependencies and cleaner separation of concerns. By breaking the monolithic core into domain-specific modules, applications can now include only the functionality they need, resulting in smaller deployments and clearer boundaries between components.
+
+For more details, refer to the [official Spring AI documentation](https://docs.spring.io/spring-ai/reference/).

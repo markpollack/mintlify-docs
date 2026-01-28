@@ -1,0 +1,184 @@
+---
+title: "Using Spring AI 1.0.0-SNAPSHOT: Important Changes and Updates"
+sidebarTitle: "Using Spring AI 1.0.0-SNAPSHOT:..."
+description: "Spring AI 1.0.0-SNAPSHOT introduces several important changes to artifact IDs, dependency management, and autoconfiguration. This blog post outlines these..."
+author: markpollack
+date: 2025-03-25
+---
+
+# Using Spring AI 1.0.0-SNAPSHOT: Important Changes and Updates
+
+Spring AI 1.0.0-SNAPSHOT introduces several important changes to artifact IDs, dependency management, and autoconfiguration. This blog post outlines these changes and provides guidance on how to update your projects.
+
+The most significant change is the naming pattern for Spring AI starter artifacts:
+- Model starters: `spring-ai-{model}-spring-boot-starter` → `spring-ai-starter-model-{model}`
+- Vector Store starters: `spring-ai-{store}-store-spring-boot-starter` → `spring-ai-starter-vector-store-{store}`
+- MCP starters: `spring-ai-mcp-{type}-spring-boot-starter` → `spring-ai-starter-mcp-{type}`
+
+Additionally, you'll need to add snapshot repositories and update your dependency management configuration.
+
+There are two ways to update your projects to Spring AI 1.0.0-SNAPSHOT: [automatic updates using AI tools](#automatic-updates-using-claude-code) or [manual updates](#manual-updates). The automatic approach leverages Claude Code to quickly transform your projects, while the manual approach provides step-by-step instructions for those who prefer to make changes directly.
+
+## Automatic Updates Using Claude Code
+
+
+For those who prefer an automated approach, you can use the [Claude Code CLI tool](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/overview) with a provided prompt to automatically upgrade your projects to 1.0.0-SNAPSHOT. This approach can save time and reduce errors when upgrading multiple projects or complex codebases. 
+For more details, see the [Automating upgrading using AI](https://docs.spring.io/spring-ai/reference/upgrade-notes.html#automating-upgrading-using-ai) section in the Upgrade Notes.
+
+Here we will just show the steps that the Claude Code CLI tool will perform in the form of screen snapshots.
+
+
+
+Pasting in the prompt.
+
+
+![Pasting a prompt in Claude](https://raw.githubusercontent.com/spring-io/spring-io-static/main/blog/mpollack/claude-paste-prompt.png)
+
+
+Updating BOM version.
+
+
+![Updating BOM version in Claude](https://raw.githubusercontent.com/spring-io/spring-io-static/main/blog/mpollack/claude-update-bom-version.png)
+
+
+Adding a repository.
+
+
+![Adding a repository in Claude](https://raw.githubusercontent.com/spring-io/spring-io-static/main/blog/mpollack/claude-add-repository.png)
+
+
+Updating a starter.
+
+
+![Updating a starter in Claude](https://raw.githubusercontent.com/spring-io/spring-io-static/main/blog/mpollack/claude-update-starter.png)
+
+All done!
+
+![Task completion in Claude](https://raw.githubusercontent.com/spring-io/spring-io-static/main/blog/mpollack/claude-done.png)
+
+
+## Manual Updates
+
+### Adding Snapshot Repositories
+
+To use the 1.0.0-SNAPSHOT version, you need to add the snapshot repositories to your build file. The dependency on the Central Sonatype Snapshots repository (`https://central.sonatype.com/repository/maven-snapshots/`) is specifically needed to pick up snapshot dependencies of the MCP Java SDK.
+
+### Maven
+
+```xml
+<repositories>
+  <repository>
+    <id>spring-snapshots</id>
+    <name>Spring Snapshots</name>
+    <url>https://repo.spring.io/snapshot</url>
+    <releases>
+      <enabled>false</enabled>
+    </releases>
+  </repository>
+  <repository>
+    <name>Central Portal Snapshots</name>
+    <id>central-portal-snapshots</id>
+    <url>https://central.sonatype.com/repository/maven-snapshots/</url>
+    <releases>
+      <enabled>false</enabled>
+    </releases>
+    <snapshots>
+      <enabled>true</enabled>
+    </snapshots>
+  </repository>
+</repositories>
+```
+
+### Gradle
+
+```groovy
+repositories {
+  mavenCentral()
+  maven { url 'https://repo.spring.io/snapshot' }
+  maven {
+    name = 'Central Portal Snapshots'
+    url = 'https://central.sonatype.com/repository/maven-snapshots/'
+  }  
+}
+```
+
+### Updating Dependency Management
+
+Update your Spring AI BOM version to `1.0.0-SNAPSHOT` in your build configuration:
+
+### Maven
+
+```xml
+<dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-bom</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+    </dependencies>
+</dependencyManagement>
+```
+
+### Gradle
+
+```groovy
+dependencies {
+  implementation platform("org.springframework.ai:spring-ai-bom:1.0.0-SNAPSHOT")
+  // Add specific Spring AI dependencies here
+}
+```
+
+### Changes to Spring AI Artifact IDs
+
+The naming pattern for Spring AI starter artifacts has changed in 1.0.0-SNAPSHOT. You'll need to update your dependencies according to the following patterns:
+
+- Model starters: `spring-ai-{model}-spring-boot-starter` → `spring-ai-starter-model-{model}`
+- Vector Store starters: `spring-ai-{store}-store-spring-boot-starter` → `spring-ai-starter-vector-store-{store}`
+- MCP starters: `spring-ai-mcp-{type}-spring-boot-starter` → `spring-ai-starter-mcp-{type}`
+
+### Example
+
+**Before:**
+```xml
+<dependency>
+    <groupId>org.springframework.ai</groupId>
+    <artifactId>spring-ai-openai-spring-boot-starter</artifactId>
+</dependency>
+```
+
+**After:**
+```xml
+<dependency>
+    <groupId>org.springframework.ai</groupId>
+    <artifactId>spring-ai-starter-model-openai</artifactId>
+</dependency>
+```
+
+### Changes to Spring AI Autoconfiguration Artifacts
+
+The Spring AI autoconfiguration has changed from a single monolithic artifact to individual autoconfiguration artifacts per model, vector store, and other components. This change was made to minimize the impact of different versions of dependent libraries conflicting, such as Google Protocol Buffers, Google RPC, and others.
+
+By separating autoconfiguration into component-specific artifacts, you can avoid pulling in unnecessary dependencies and reduce the risk of version conflicts in your application.
+
+The original monolithic artifact is no longer available:
+
+```xml
+<!-- NO LONGER AVAILABLE -->
+<dependency>
+    <groupId>org.springframework.ai</groupId>
+    <artifactId>spring-ai-spring-boot-autoconfigure</artifactId>
+    <version>${project.version}</version>
+</dependency>
+```
+
+Instead, each component now has its own autoconfiguration artifact following these patterns:
+
+- Model autoconfiguration: `spring-ai-autoconfigure-model-{model}`
+- Vector Store autoconfiguration: `spring-ai-autoconfigure-vector-store-{store}`
+- MCP autoconfiguration: `spring-ai-autoconfigure-mcp-{type}`
+
+In most cases, you won't need to explicitly add these autoconfiguration dependencies. They are included transitively when using the corresponding starter dependencies.
+

@@ -1,0 +1,320 @@
+---
+title: "MCP Authorization in practice with Spring AI and OAuth2"
+sidebarTitle: "MCP Authorization in practice with..."
+description: "Last month, we explored how to [secure Spring AI MCP Servers](https://spring.io/blog/2025/04/02/mcp-server-oauth2)[1] with the OAuth2 authorization framework."
+author: dgarnier
+date: 2025-05-19
+---
+
+Last month, we explored how to [secure Spring AI MCP Servers](https://spring.io/blog/2025/04/02/mcp-server-oauth2)[1] with the OAuth2 authorization framework.
+In the conclusion of that article, we mentioned we'd explore using standalone Authorization Servers for MCP Security and deviate from the then-current specification.
+
+Since we published the article, the community has been very active in revising the original version of the specification.
+The [new draft](https://modelcontextprotocol.io/specification/draft/basic/authorization) is simpler, and the major change does match what we had imagined for security.
+MCP Servers are still OAuth2 Resource Servers, meaning they authorize incoming requests using access tokens passed in a header.
+However, they do not need to be Authorization Servers themselves: access tokens can now be issued by an external Authorization Server.
+
+In this blog post, we'll describe how to implement the newest revision of the specification in MCP Servers, and how to secure your MCP clients.
+
+Feel free to take a peek at the [previous blog post](https://spring.io/blog/2025/04/02/mcp-server-oauth2) for a refresher on OAuth2 and MCP.
+
+
+## Securing the MCP Server
+
+In this example, we will add OAuth 2 support to a sample MCP Server - the ["Weather" MCP tool](https://github.com/spring-projects/spring-ai-examples/tree/main/model-context-protocol/weather/starter-webmvc-server) from our Spring AI examples repository.
+
+First, we import the required Boot starter in `pom.xml`:
+
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+</dependency>
+```
+
+Then, we configure our MCP Server to be an OAuth2 Resource Server by updating `application.properties`:
+
+```properties
+# Update the port so it does not clash with our Client application
+server.port=8090
+
+# Turn on OAuth2 Resource Server
+# This assumes we have an Authorization Server running at http://localhost:9000
+spring.security.oauth2.resourceserver.jwt.issuer-uri=http://localhost:9000
+```
+
+Thanks to Spring Security and Spring Boot support, our MCP Server is now fully secured: every request requires a JWT token in the `Authorization` header.
+
+If you'd like to learn more about OAuth2 Resource Server support in Spring Security, head over to the [reference documentation](https://docs.spring.io/spring-security/reference/servlet/oauth2/resource-server/jwt.html).
+
+
+## Building an OAuth2 Authorization Server
+
+Our MCP Server now expects an Authorization Server to be running at `http://localhost:9000`.
+In an enterprise scenario, an authorization server is often already provided, either through cloud services or on-premise deployments of servers such as Keycloak.
+For this demo, you can use the Authorization Server [we provide with the demo](https://github.com/Kehrlann/spring-ai-mcp-authorization-demo/tree/main/authorization-server) and run it with `./mvnw spring-boot:run`.
+
+Alternatively, you can build your own in just a few lines of configuration. First, we need the dependencies:
+
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-oauth2-authorization-server</artifactId>
+</dependency>
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-web</artifactId>
+</dependency>
+```
+
+And then, some configuration that will be picked up by Spring Boot in `application.yml`:
+
+```properties
+server:
+  port: 9000
+
+  # Cookies are per-domain, multiple apps running on localhost on different ports share cookies.
+  # This can create conflicts. We ensure the session cookie is different from the cookie that
+  # the client application uses.
+  servlet:
+    session:
+      cookie:
+        name: MCP_AUTHSERVER_SESSION
+
+spring:
+  security:
+    # Provide a default "user"
+    user:
+      name: user
+      password: password
+
+    # Configure the Authorization Server
+    oauth2:
+      authorizationserver:
+        client:
+          oidc-client:
+            registration:
+              client-id: "mcp-client"
+              client-secret: "{noop}mcp-secret"
+              client-authentication-methods:
+                - "client_secret_basic"
+              authorization-grant-types:
+                - "authorization_code"
+                - "client_credentials"
+                - "refresh_token"
+              redirect-uris:
+                # The client application can technically run on any port
+                - "http://127.0.0.1:8080/authorize/oauth2/code/authserver"
+                - "http://localhost:8080/authorize/oauth2/code/authserver"
+```
+
+If you'd like to learn more about OAuth2 Authorization Server support in Spring, head over to the [reference documentation](https://docs.spring.io/spring-authorization-server/reference/getting-started.html)
+
+
+## Building an MCP client
+
+The MCP Server and Authorization Server are straightforward to set up, with simple configuration.
+We need to put in a little more work to secure the MCP client.
+To get started building an MCP Client, regardless of authorization, please refer to [the reference documentation](https://docs.spring.io/spring-ai/reference/api/mcp/mcp-client-boot-starter-docs.html).
+
+⚠️ Currently, Spring AI only supports adding security for the `SYNC` MCP clients, using a `WebClient`. 
+
+Ensure your application has the correct dependencies:
+
+```xml
+<!-- Use Spring WebMVC -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-web</artifactId>
+</dependency>
+
+<!-- Use WebClient-based MCP-client -->
+<dependency>
+    <groupId>org.springframework.ai</groupId>
+    <artifactId>spring-ai-starter-mcp-client-webflux</artifactId>
+</dependency>
+
+<!-- Bring in Spring Security -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-oauth2-client</artifactId>
+</dependency>
+```
+
+Then update your `application.properties`:
+
+```properties
+# Configure MCP
+spring.ai.mcp.client.sse.connections.server1.url=http://localhost:8090
+spring.ai.mcp.client.type=SYNC
+
+# Authserver common config
+spring.security.oauth2.client.provider.authserver.issuer-uri=http://localhost:9000
+
+# Security: for getting tokens used when calling MCP tools
+spring.security.oauth2.client.registration.authserver.client-id=mcp-client
+spring.security.oauth2.client.registration.authserver.client-secret=mcp-secret
+spring.security.oauth2.client.registration.authserver.authorization-grant-type=authorization_code
+spring.security.oauth2.client.registration.authserver.provider=authserver
+
+# Security: for getting tokens used when listing tools, initializing, etc.
+spring.security.oauth2.client.registration.authserver-client-credentials.client-id=mcp-client
+spring.security.oauth2.client.registration.authserver-client-credentials.client-secret=mcp-secret
+spring.security.oauth2.client.registration.authserver-client-credentials.authorization-grant-type=client_credentials
+spring.security.oauth2.client.registration.authserver-client-credentials.provider=authserver
+```
+
+Notice here that we register two OAuth2 clients.
+The first, using the `client_credentials` grant, is used to initialize our client application.
+It allows setting up the session with the MCP client, as well as listing available tools, using machine-to-machine communication: no user is involved in that flow.
+The second uses the `authorization_code` grant, and allows our app to obtain tokens on behalf of end-users
+That client is used for calling the tools.
+
+While it is not explained here, you will need to add the [LLM model](https://docs.spring.io/spring-ai/reference/api/index.html) of your choice to your application to make it complete.
+
+The next step is to configure MCP clients for Spring AI, by providing a `@Bean`:
+
+```java
+@Bean
+ChatClient chatClient(ChatClient.Builder chatClientBuilder, List<McpSyncClient> mcpClients) {
+    return chatClientBuilder.defaultToolCallbacks(new SyncMcpToolCallbackProvider(mcpClients)).build();
+}
+```
+
+To add OAuth2 to our MCP Client, we configure a Spring Security `SecurityFilterChain` to turn on OAuth2, as well as a custom `WebClient.Builder` used by the MCP client:
+
+```java
+@Bean
+SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    return http.authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+        .oauth2Client(Customizer.withDefaults())
+        .csrf(CsrfConfigurer::disable)
+        .build();
+}
+
+/**
+ * Overload Boot's default {@link WebClient.Builder}, so that we can inject an
+ * oauth2-enabled {@link ExchangeFilterFunction} that adds OAuth2 tokens to requests
+ * sent to the MCP server.
+ */
+@Bean
+WebClient.Builder webClientBuilder(McpSyncClientExchangeFilterFunction filterFunction) {
+    return WebClient.builder().apply(filterFunction.configuration());
+}
+```
+
+To add tokens to MCP Client request, we need a custom `ExchangeFilterFunction` that decides which OAuth2 tokens it uses, depending on the context (user interaction or app initialization).
+It can look a bit confusing for Spring Security beginners, but feel free to use it as-is:
+
+```java
+/**
+ * A wrapper around Spring Security's
+ * {@link ServletOAuth2AuthorizedClientExchangeFilterFunction}, which adds OAuth2
+ * {@code access_token}s to requests sent to the MCP server.
+ * <p>
+ * The end goal is to use access_token that represent the end-user's permissions. Those
+ * tokens are obtained using the {@code authorization_code} OAuth2 flow, but it requires a
+ * user to be present and using their browser.
+ * <p>
+ * By default, the MCP tools are initialized on app startup, so some requests to the MCP
+ * server happen, to establish the session (/sse), and to send the {@code initialize} and
+ * e.g. {@code tools/list} requests. For this to work, we need an access_token, but we
+ * cannot get one using the authorization_code flow (no user is present). Instead, we rely
+ * on the OAuth2 {@code client_credentials} flow for machine-to-machine communication.
+ */
+@Component
+public class McpSyncClientExchangeFilterFunction implements ExchangeFilterFunction {
+
+  private final ClientCredentialsOAuth2AuthorizedClientProvider clientCredentialTokenProvider = new ClientCredentialsOAuth2AuthorizedClientProvider();
+
+  private final ServletOAuth2AuthorizedClientExchangeFilterFunction delegate;
+
+  private final ClientRegistrationRepository clientRegistrationRepository;
+
+  // Must match registration id in property
+  // spring.security.oauth2.client.registration.<REGISTRATION-ID>.authorization-grant-type=authorization_code
+  private static final String AUTHORIZATION_CODE_CLIENT_REGISTRATION_ID = "authserver";
+
+  // Must match registration id in property
+  // spring.security.oauth2.client.registration.<REGISTRATION-ID>.authorization-grant-type=client_credentials
+  private static final String CLIENT_CREDENTIALS_CLIENT_REGISTRATION_ID = "authserver-client-credentials";
+
+  public McpSyncClientExchangeFilterFunction(OAuth2AuthorizedClientManager clientManager,
+      ClientRegistrationRepository clientRegistrationRepository) {
+    this.delegate = new ServletOAuth2AuthorizedClientExchangeFilterFunction(clientManager);
+    this.delegate.setDefaultClientRegistrationId(AUTHORIZATION_CODE_CLIENT_REGISTRATION_ID);
+    this.clientRegistrationRepository = clientRegistrationRepository;
+  }
+
+  /**
+   * Add an {@code access_token} to the request sent to the MCP server.
+   * <p>
+   * If we are in the context of a ServletRequest, this means a user is currently
+   * involved, and we should add a token on behalf of the user, using the
+   * {@code authorization_code} grant. This typically happens when doing an MCP
+   * {@code tools/call}.
+   * <p>
+   * If we are NOT in the context of a ServletRequest, this means we are in the startup
+   * phases of the application, where the MCP client is initialized. We use the
+   * {@code client_credentials} grant in that case, and add a token on behalf of the
+   * application itself.
+   */
+  @Override
+  public Mono<ClientResponse> filter(ClientRequest request, ExchangeFunction next) {
+    if (RequestContextHolder.getRequestAttributes() instanceof ServletRequestAttributes) {
+      return this.delegate.filter(request, next);
+    }
+    else {
+      var accessToken = getClientCredentialsAccessToken();
+      var requestWithToken = ClientRequest.from(request)
+        .headers(headers -> headers.setBearerAuth(accessToken))
+        .build();
+      return next.exchange(requestWithToken);
+    }
+  }
+
+  private String getClientCredentialsAccessToken() {
+    var clientRegistration = this.clientRegistrationRepository
+      .findByRegistrationId(CLIENT_CREDENTIALS_CLIENT_REGISTRATION_ID);
+
+    var authRequest = OAuth2AuthorizationContext.withClientRegistration(clientRegistration)
+      .principal(new AnonymousAuthenticationToken("client-credentials-client", "client-credentials-client",
+          AuthorityUtils.createAuthorityList("ROLE_ANONYMOUS")))
+      .build();
+    return this.clientCredentialTokenProvider.authorize(authRequest).getAccessToken().getTokenValue();
+  }
+
+  /**
+   * Configure a {@link WebClient} to use this exchange filter function.
+   */
+  public Consumer<WebClient.Builder> configuration() {
+    return builder -> builder.defaultRequest(this.delegate.defaultRequest()).filter(this);
+  }
+
+}
+```
+
+And with that, we have everything we need! Asking our LLM weather-related questions will trigger a call our Weather MCP tool:
+
+```java
+var chatResponse = chatClient.prompt("What is the weather in %s right now?".formatted(query))
+        .call()
+        .content();
+```
+
+If you'd like to try it for yourself, we have [a fully packaged demo application](https://github.com/Kehrlann/spring-ai-mcp-authorization-demo/) available on GitHub.
+
+
+## What's next?
+
+This is a first step implementing full, end-to-end authorization.
+By using Spring's powerful extensibility, we can add OAuth2 to our MCP Clients and Servers, but it requires writing some code.
+
+The Spring team is hard at work building a simpler integration, with the delightful configuration-driven Boot user experience.
+
+We are also working on fine-grained permissions for MCP Servers.
+In more advanced use-cases, not all tools/resources/prompts in an MCP Server will require the same permissions: the "thing-reader" tool will be available to every user, but the "thing-writer" is only available to admins.
+
+---
+
+[1]: [Model Context Protocol](https://docs.spring.io/spring-ai/reference/1.0/api/mcp/mcp-overview.html), or MCP for short, is a protocol allow AI models to interact with and access external tools and resources in a structured way. Spring AI provides [out-of-the box support](https://docs.spring.io/spring-ai/reference/api/mcp/mcp-overview.html) for both MCP Servers and MCP Clients.

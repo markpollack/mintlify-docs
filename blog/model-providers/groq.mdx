@@ -1,0 +1,176 @@
+---
+title: "Spring AI with Groq - a blazingly fast AI inference engine"
+sidebarTitle: "with Groq - a blazingly fast AI..."
+description: "> Faster information processing not only informs - it transforms how we perceive and innovate."
+author: tzolov
+date: 2024-07-31
+---
+
+> Faster information processing not only informs - it transforms how we perceive and innovate.
+
+[Spring AI](https://docs.spring.io/spring-ai/reference/), a powerful framework for integrating AI capabilities into Spring applications, now offers support for [Groq](https://groq.com/) - a blazingly fast AI inference engine with support for Tool/Function calling.
+
+Leveraging Groq's OpenAI-compatible API, Spring AI seamlessly integrates by adapting its existing [OpenAI Chat](https://docs.spring.io/spring-ai/reference/api/chat/openai-chat.html) client. 
+This approach enables developers to harness Groq's high-performance models through the familiar Spring AI API.
+
+![spring-ai-groq-integration](https://static.spring.io/blog/contentful/20240923/spring-ai-groq-integration.jpg)
+
+We'll explore how to configure and use the Spring AI OpenAI chat client to connect with Groq.
+For detailed information, consult the Spring AI [Groq documentation](https://docs.spring.io/spring-ai/reference/api/chat/groq-chat.html) and related [tests](https://github.com/spring-projects/spring-ai/blob/main/models/spring-ai-openai/src/test/java/org/springframework/ai/openai/chat/proxy/GroqWithOpenAiChatModelIT.java).
+
+# Groq API Key
+
+To interact with Groq, you'll need to obtain a Groq API key from https://console.groq.com/keys.
+
+# Dependencies
+
+Add the Spring AI OpenAI starter to your project.
+
+    `<dependency>`
+      `<groupId>`org.springframework.ai`</groupId>`
+      `<artifactId>`spring-ai-openai-spring-boot-starter`</artifactId>`
+    `</dependency>`
+
+For Gradle, add this to your `build.gradle`
+
+    dependencies \{
+      implementation 'org.springframework.ai:spring-ai-openai-spring-boot-starter'
+    \}
+
+Ensure you've added the Spring [Milestone and Snapshot repositories](https://docs.spring.io/spring-ai/reference/getting-started.html#repositories) and add the [Spring AI BOM](https://docs.spring.io/spring-ai/reference/getting-started.html#dependency-management). 
+
+# Configuring Spring AI for Groq
+
+To use Groq with Spring AI, we need to configure the OpenAI client to point to Groq's API endpoint and use Groq-specific models.
+
+Add the following environment variables to your project:
+
+    export SPRING_AI_OPENAI_API_KEY=`<INSERT GROQ API KEY HERE>`  
+    export SPRING_AI_OPENAI_BASE_URL=https://api.groq.com/openai  
+    export SPRING_AI_OPENAI_CHAT_OPTIONS_MODEL=llama3-70b-8192
+
+Alternatively, you can add these to your `application.properties` file:
+
+    spring.ai.openai.api-key=`<GROQ_API_KEY>`
+    spring.ai.openai.base-url=https://api.groq.com/openai
+    spring.ai.openai.chat.options.model=llama3-70b-8192
+    spring.ai.openai.chat.options.temperature=0.7
+
+Key points:
+- The `api-key` is set to one of your [Groq keys](https://console.groq.com/keys).
+- The `base-url` is set to Groq's API endpoint: `https://api.groq.com/openai`
+- The `model` is set to one of Groq's available [Models](https://console.groq.com/docs/models).
+
+For the complete list of configuration properties, consult the [Groq chat properties](https://docs.spring.io/spring-ai/reference/api/chat/groq-chat.html#_chat_properties) documentation.
+
+# Code Example
+
+Now that we've configured Spring AI to use Groq, let's look at a simple example of how to use it in your application.
+
+    @RestController
+    public class ChatController \{
+
+      private final ChatClient chatClient;
+
+      @Autowired
+      public ChatController(ChatClient.Builder builder) \{
+          this.chatClient = builder.build();
+      \}
+
+      @GetMapping("/ai/generate")
+      public Map generate(@RequestParam(value = "message", defaultValue = "Tell me a joke") String message) \{
+         String response = chatClient.prompt().user(message).call().content();
+         return Map.of("generation", response);
+      \}
+
+      @GetMapping("/ai/generateStream")
+      public Flux`<String>` generateStream(@RequestParam(value = "message", 
+            defaultValue = "Tell me a joke") String message) \{
+          return chatClient.prompt().user(message).stream().content();
+      \}
+    \}
+
+In this example, we've created a simple REST controller with two endpoints:
+
+- `/ai/generate`: Generates a single response to a given prompt.
+- `/ai/generateStream`: Streams the response, which can be useful for longer outputs or real-time interactions.
+
+# Tools/Functions
+Groq API endpoints support [tool/function calling](https://console.groq.com/docs/tool-use) when selecting one of the Tool/Function supporting models.
+
+![spring-ai-groq-functions-2](https://static.spring.io/blog/contentful/20240923/spring-ai-groq-functions-2.jpg)
+
+You can register custom Java functions with your ChatModel and have the provided Groq model intelligently choose to output a JSON object containing arguments to call one or many of the registered functions. 
+This is a powerful technique to connect the LLM capabilities with external tools and APIs. 
+
+### Tool Example
+
+Here's a simple example of how to use Groq function calling with Spring AI:
+
+    @SpringBootApplication
+    public class GroqApplication \{
+
+    	public static void main(String[] args) \{
+    		SpringApplication.run(GroqApplication.class, args);
+    	\}
+
+    	@Bean
+    	CommandLineRunner runner(ChatClient.Builder chatClientBuilder) \{
+    		return args -> \{
+    			var chatClient = chatClientBuilder.build();
+
+    			var response = chatClient.prompt()
+    				.user("What is the weather in Amsterdam and Paris?")
+    				.functions("weatherFunction") // reference by bean name.
+    				.call()
+    				.content();
+
+    			System.out.println(response);
+    		\};
+    	\}
+
+    	@Bean
+    	@Description("Get the weather in location")
+    	public Function`<WeatherRequest, WeatherResponse>` weatherFunction() \{
+    		return new MockWeatherService();
+    	\}
+
+    	public static class MockWeatherService implements Function`<WeatherRequest, WeatherResponse>` \{
+
+    		public record WeatherRequest(String location, String unit) \{\}
+    		public record WeatherResponse(double temp, String unit) \{\}
+
+    		@Override
+    		public WeatherResponse apply(WeatherRequest request) \{
+    			double temperature = request.location().contains("Amsterdam") ? 20 : 25;
+    			return new WeatherResponse(temperature, request.unit);
+    		\}
+    	\}
+    \}
+
+In this example, when the model needs weather information, it will automatically call the `weatherFunction` bean, which can then fetch real-time weather data.
+
+The expected response looks like this: "The weather in Amsterdam is currently 20 degrees Celsius, and the weather in Paris is currently 25 degrees Celsius."
+
+Read more about OpenAI [Function Calling](https://docs.spring.io/spring-ai/reference/api/chat/functions/openai-chat-functions.html).
+
+# Key Considerations
+
+When using Groq with Spring AI, keep the following points in mind:
+
+* Tool/Function Calling: Groq [supports](https://console.groq.com/docs/tool-use) Tool/Function calling. Check for the recommended models to use.
+* API Compatibility: The Groq API is not fully compatible with the OpenAI API. Be aware of potential differences in behavior or features.
+* Model Selection: Ensure you're using one of the Groq-specific [models](https://console.groq.com/docs/models).
+* Multimodal Limitations: Currently, Groq doesn't support multimodal messages.
+* Performance: Groq is known for its fast inference times. You may notice improved response speeds compared to other providers, especially for larger models.
+
+# Conclusion
+
+Integrating Groq with Spring AI opens up new possibilities for developers looking to leverage high-performance AI models in their Spring applications. 
+By repurposing the OpenAI client, Spring AI makes it straightforward to switch between different AI providers, allowing you to choose the best solution for your specific needs.
+
+As you explore this integration, remember to stay updated with the latest documentation from both [Spring AI](https://docs.spring.io/spring-ai/reference/index.html) and [Groq](https://console.groq.com/docs/quickstart), as features and compatibility may evolve over time.
+
+We encourage you to experiment with different Groq models and compare their performance and outputs to find the best fit for your use case. 
+
+Happy coding, and enjoy the speed and capabilities that Groq brings to your AI-powered Spring applications!

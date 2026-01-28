@@ -1,0 +1,198 @@
+---
+title: "Supercharging Your AI Applications with Spring AI Advisors"
+sidebarTitle: "Supercharging Your AI Applications..."
+description: "In the rapidly evolving world of artificial intelligence, developers are constantly seeking ways to enhance their AI applications."
+author: tzolov
+date: 2024-10-02
+---
+
+In the rapidly evolving world of artificial intelligence, developers are constantly seeking ways to enhance their AI applications. 
+[Spring AI](https://docs.spring.io/spring-ai/reference/index.html), a Java framework for building AI-powered applications, has introduced a powerful feature: the [Spring AI Advisors](https://docs.spring.io/spring-ai/reference/api/advisors.html). 
+
+The advisors can supercharge your AI applications, making them more modular, portable and easier to maintain.
+
+> If reading the post isn't convenient, you can listen to this __experimental__ podcast, __AI-generated__ from blog's content:
+<iframe title="Supercharging Your AI Applications with Spring AI Advisors" allowtransparency="true" height="150" width="100%" style={{border: "none", minWidth: "min(100%, 430px)", height: "150px"}} scrolling="no" data-name="pb-iframe-player" src="https://www.podbean.com/player-v2/?i=97h9v-16edd64-pb&from=pb6admin&share=1&download=1&rtl=0&fonts=Arial&skin=8bbb4e&font-color=ffffff&logo_link=episode_page&btn-skin=666666" loading="lazy"></iframe>
+
+## What are Spring AI Advisors?
+
+At their core, Spring AI Advisors are components that intercept and potentially modify the flow of chat-completion requests and responses in your AI applications. The key player in this system is the __AroundAdvisor__, which allows developers to dynamically transform or utilize information within these interactions.
+
+The main benefits of using Advisors include:
+
+1. **Encapsulation of Recurring Tasks**: Package common GenAI patterns into reusable units.
+2. **Transformation**: Augment data sent to Language Models (LLMs) and format responses sent back to clients.
+3. **Portability**: Create reusable transformation components that work across various models and use cases.
+
+## How Advisors Work
+
+The Advisor system operates as a chain, with each Advisor in the sequence having the opportunity to process both the incoming request and the outgoing response. Here's a simplified flow:
+
+![spring-ai-advisors-flow](https://static.spring.io/blog/contentful/20240923/spring-ai-advisors-flow.svg)
+
+1. An `AdvisedRequest` is created from the user's prompt, along with an empty `advisor-context`.
+2. Each Advisor in the chain processes the request, potentially modifying it and then forwards the execution to the next advisor in the chain. Alternatively, it can choose to block the request by not making the call to invoke the next entity.
+3. The final Advisor sends the request to the Chat Model.
+4. The Chat Model's response is passed back through the advisor chain as an `AdvisedResponse` a combination of the original `ChatResponse` and the advise context from the input path of the chain.
+5. Each Advisor can process or modify the response.
+6. The augmented `ChatResponse` from the final `AdvisedResponse` is returned to the client.
+
+## Using Advisors
+
+Spring AI comes with several pre-built Advisors to handle common scenarios and Gen AI patterns:
+
+- [MessageChatMemoryAdvisor](https://github.com/spring-projects/spring-ai/blob/main/spring-ai-core/src/main/java/org/springframework/ai/chat/client/advisor/MessageChatMemoryAdvisor.java), [PromptChatMemoryAdvisor](https://github.com/spring-projects/spring-ai/blob/main/spring-ai-core/src/main/java/org/springframework/ai/chat/client/advisor/PromptChatMemoryAdvisor.java), and [VectorStoreChatMemoryAdvisor](https://github.com/spring-projects/spring-ai/blob/main/spring-ai-core/src/main/java/org/springframework/ai/chat/client/advisor/VectorStoreChatMemoryAdvisor.java): These manage conversation history in various ways.
+- [QuestionAnswerAdvisor](https://github.com/spring-projects/spring-ai/blob/main/spring-ai-core/src/main/java/org/springframework/ai/chat/client/advisor/QuestionAnswerAdvisor.java): Implements the RAG (Retrieval-Augmented Generation) pattern for improved question-answering capabilities.
+- [SafeGuardAdvisor](https://github.com/spring-projects/spring-ai/blob/main/spring-ai-core/src/main/java/org/springframework/ai/chat/client/advisor/SafeGuardAdvisor.java): Very basic, sensitive words based advisor, that helps prevent the model from generating harmful or inappropriate content. It demonstrates how to block a request by not making the call to invoke the next adviser in the chain. In this case, it's advisor's responsible for filling out the response or throw and error.
+
+With the [ChatClient API](https://docs.spring.io/spring-ai/reference/api/chatclient.html#_advisor_configuration_in_chatclient) you can register the advisors needed for your pipeline:
+
+```java
+var chatClient = ChatClient.builder(chatModel)
+    .defaultAdvisors(
+        new MessageChatMemoryAdvisor(chatMemory), // chat-memory advisor
+        new QuestionAnswerAdvisor(vectorStore, SearchRequest.defaults()) // RAG advisor
+    )
+    .build();
+
+String response = chatClient.prompt()
+    // Set chat memory parameters at runtime
+    .advisors(advisor -> advisor.param("chat_memory_conversation_id", "678")
+            .param("chat_memory_response_size", 100))
+    .user(userText)
+    .call()
+	.content();
+```
+
+## Implementing Your Own Advisor
+
+The Advisor API consists of [CallAroundAdvisor](https://github.com/spring-projects/spring-ai/blob/main/spring-ai-core/src/main/java/org/springframework/ai/chat/client/advisor/api/CallAroundAdvisor.java) and [CallAroundAdvisorChain](https://github.com/spring-projects/spring-ai/blob/main/spring-ai-core/src/main/java/org/springframework/ai/chat/client/advisor/api/CallAroundAdvisorChain.java) for non-streaming, and [StreamAroundAdvisor](https://github.com/spring-projects/spring-ai/blob/main/spring-ai-core/src/main/java/org/springframework/ai/chat/client/advisor/api/StreamAroundAdvisor.java) and [StreamAroundAdvisorChain](https://github.com/spring-projects/spring-ai/blob/main/spring-ai-core/src/main/java/org/springframework/ai/chat/client/advisor/api/StreamAroundAdvisorChain.java) for streaming scenarios. 
+It also includes [AdvisedRequest](https://github.com/spring-projects/spring-ai/blob/main/spring-ai-core/src/main/java/org/springframework/ai/chat/client/advisor/api/AdvisedRequest.java) to represent the unsealed Prompt request data, and [AdvisedResponse](https://github.com/spring-projects/spring-ai/blob/main/spring-ai-core/src/main/java/org/springframework/ai/chat/client/advisor/api/AdvisedResponse.java) for the chat completion data. 
+The [AdvisedRequest](https://github.com/spring-projects/spring-ai/blob/main/spring-ai-core/src/main/java/org/springframework/ai/chat/client/advisor/api/AdvisedRequest.java) and the [AdvisedResponse](https://github.com/spring-projects/spring-ai/blob/main/spring-ai-core/src/main/java/org/springframework/ai/chat/client/advisor/api/AdvisedResponse.java) have an `advise-context` field, used to share state across the advisor chain.
+
+#### Simple Logging Advisor
+
+Creating a custom Advisor is straightforward. Let's implement a simple logging Advisor to demonstrate the process:
+
+```java
+public class SimpleLoggerAdvisor implements CallAroundAdvisor, StreamAroundAdvisor {
+    private static final Logger logger = LoggerFactory.getLogger(SimpleLoggerAdvisor.class);
+
+    @Override
+    public String getName() {
+        return this.getClass().getSimpleName();
+    }
+
+    @Override
+    public int getOrder() {
+        return 0;
+    }
+
+    @Override
+    public AdvisedResponse aroundCall(AdvisedRequest advisedRequest, CallAroundAdvisorChain chain) {
+        logger.debug("BEFORE: {}", advisedRequest);
+        AdvisedResponse advisedResponse = chain.nextAroundCall(advisedRequest);
+        logger.debug("AFTER: {}", advisedResponse);
+        return advisedResponse;
+    }
+
+    @Override
+    public Flux<AdvisedResponse> aroundStream(AdvisedRequest advisedRequest, StreamAroundAdvisorChain chain) {
+        logger.debug("BEFORE: {}", advisedRequest);
+        Flux<AdvisedResponse> advisedResponses = chain.nextAroundStream(advisedRequest);
+        return new MessageAggregator().aggregateAdvisedResponse(advisedResponses,
+                advisedResponse -> logger.debug("AFTER: {}", advisedResponse));
+    }
+}
+```
+
+This Advisor logs the request before it's processed and the response after it's received, providing valuable insights into the AI interaction process.
+
+The `aggregateAdvisedResponse(...)` utility combines `AdviseResponse` chunks into a single `AdvisedResponse`, returning the original stream and accepting a `Consumer` callback for the completed result. 
+It preserves original content and context.
+
+#### Re-Reading (Re2) Advisor
+
+Let's implement a more advanced Advisor based on the Re-Reading (Re2) technique, inspired by this [paper](https://arxiv.org/pdf/2309.06275), which can improve the reasoning capabilities of large language models:
+
+```java
+public class ReReadingAdvisor implements CallAroundAdvisor, StreamAroundAdvisor {
+    private static final String DEFAULT_USER_TEXT_ADVISE = """
+        {re2_input_query}
+        Read the question again: {re2_input_query}
+        """;
+
+    @Override
+    public String getName() {
+        return this.getClass().getSimpleName();
+    }
+
+    @Override
+    public int getOrder() {
+        return 0;
+    }
+
+    private AdvisedRequest before(AdvisedRequest advisedRequest) {
+
+        String inputQuery = advisedRequest.userText(); //original user query
+
+        Map<String, Object> params = new HashMap<>(advisedRequest.userParams());        
+        params.put("re2_input_query", inputQuery);
+
+        return AdvisedRequest.from(advisedRequest)
+                .withUserText(DEFAULT_USER_TEXT_ADVISE)
+                .withUserParams(params)
+                .build();
+    }
+
+    @Override
+    public AdvisedResponse aroundCall(AdvisedRequest advisedRequest, CallAroundAdvisorChain chain) {
+        return chain.nextAroundCall(before(advisedRequest));
+    }
+
+    @Override
+    public Flux<AdvisedResponse> aroundStream(AdvisedRequest advisedRequest, StreamAroundAdvisorChain chain) {
+        return chain.nextAroundStream(before(advisedRequest));
+    }
+}
+```
+
+This Advisor modifies the input query to include a "re-reading" step, potentially improving the AI model's understanding and reasoning about the question.
+
+## Advanced Topics
+
+Spring AI's advanced topics encompass important aspects of advisor management, including *order control*, *state sharing*, and *streaming capabilities*. Advisor execution order is determined by the getOrder() method. State sharing between advisors is enabled through a shared advise-context object, facilitating complex multi-advisor scenarios. The system supports both streaming and non-streaming advisors, allowing for processing of complete requests and responses or handling continuous data streams using reactive programming concepts.
+
+### Controlling Advisor Order
+
+The order of Advisors in the chain is crucial and is determined by the `getOrder()` method. Advisors with lower order values are executed first.
+Because the advisor chain is a stack, the first advisor in the chain is the last to process the request and the first to process the response. 
+If you want to ensure that an advisor is executed last, set its order close to the `Ordered.LOWEST_PRECEDENCE` value and vice versa to execute first set the order close to the `Ordered.HIGHEST_PRECEDENCE` value. 
+If you have multiple advisors with the same order value, the order of execution is not guaranteed.
+
+### Using AdvisorContext for State Sharing
+
+Both the `AdvisedRequest` and the `AdvisedResponse` share an  advise-context object.
+You can use the `advise-context` to share state between the advisors in the chain, and build more complex processing scenarios that involve multiple advisors.
+
+### Streaming vs. Non-Streaming
+
+Spring AI supports both streaming and non-streaming Advisors. 
+Non-streaming Advisors work with complete requests and responses, while streaming Advisors handle continuous streams using reactive programming concepts (e.g., Flux for responses).
+
+For streaming advisors, it's crucial to note that a single `AdvisedResponse` instance represents only a chunk (i.e., part) of the entire `Flux<AdvisedResponse>` response. In contrast, for non-streaming advisors, the `AdvisedResponse` encompasses the complete response.
+
+## Best Practices
+
+1. Keep Advisors focused on specific tasks for better modularity.
+2. Use the `advise-context` to share state between Advisors when necessary.
+3. Implement both streaming and non-streaming versions of your Advisor for maximum flexibility.
+4. Carefully consider the order of Advisors in your chain to ensure proper data flow.
+
+## Conclusion
+
+Spring AI Advisors provide a powerful and flexible way to enhance your AI applications. By leveraging this API, you can create more sophisticated, reusable, and maintainable AI components. Whether you're implementing custom logic, managing conversation history, or improving model reasoning, Advisors offer a clean and efficient solution.
+
+We encourage you to experiment with Spring AI Advisors in your projects and share your custom implementations with the community. The possibilities are endless, and your innovations could help shape the future of AI application development!
+
+Happy coding, and may your AI applications be ever more intelligent and responsive!

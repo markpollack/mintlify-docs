@@ -1,0 +1,387 @@
+---
+title: "Explainable AI Agents: Capture LLM Tool Call Reasoning with Spring AI"
+sidebarTitle: "Explainable AI Agents: Capture LLM..."
+description: "When building AI agents with tool calling capabilities, developers often need insights into **why** an LLM chose a particular tool—not just which tool it..."
+author: tzolov
+date: 2025-12-23
+---
+
+<img style={{display: "block", margin: "5px auto", padding: "10px"}} src="https://raw.githubusercontent.com/spring-io/spring-io-static/refs/heads/main/blog/tzolov/20251217/spring-ai-tool-argument-augment-lifecycle.png" width="290" align="right"/>
+
+When building AI agents with tool calling capabilities, developers often need insights into **why** an LLM chose a particular tool—not just which tool it selected. Understanding the model's reasoning process is important for debugging, observability, and building trustworthy AI systems.
+
+Spring AI now (2.0.0-SNAPSHOT/1.1.3-SNAPSHOT) includes the [Tool Argument Augmenter](https://docs.spring.io/spring-ai/reference/2.0-SNAPSHOT/api/tools.html#tool-argument-augmentation) feature that enables **dynamic augmentation of tool input schemas** with additional arguments before sending tool definitions to the LLM. This allows AI applications to capture extra information from the model—such as reasoning, inner thoughts, confidence levels, or metadata—that can be used by the application itself without affecting the underlying tool implementation.
+
+This technique is useful for:
+- **Memory Enhancement**: Capture the LLM's internal reasoning and insights to store in long-term memory—these "inner thoughts" become valuable context that improves the model's reasoning capabilities across extended conversations
+- **Observability & Debugging**: Capture the LLM's step-by-step reasoning before each tool execution
+
+> **💡 Quick Start and Demo**: For a quick start, jump directly to the [Quick Start](#quick-start) section below. For a complete working example, check out the [tool-argument-augmenter-demo](https://github.com/spring-projects/spring-ai-examples/tree/main/advisors/tool-argument-augmenter-demo) demo project and reference documentation: [Tool Argument Augmentation](https://docs.spring.io/spring-ai/reference/2.0-SNAPSHOT/api/tools.html#tool-argument-augmentation).
+
+#### Tool Calling
+
+The [Tool calling](https://docs.spring.io/spring-ai/reference/api/tools.html) (also known as function calling) allows LLMs to request the execution of external functions or APIs when they need to perform actions or retrieve information beyond their training data.
+The Spring AI Tool Calling flow when using the `ToolCallAdvisor` is:
+
+<img style={{display: "block", margin: "auto"}} src="https://raw.githubusercontent.com/spring-io/spring-io-static/refs/heads/main/blog/tzolov/20251217/spring-ai-sdt-tool-calling.png" width="510" align="right"/>
+
+1. User asks a question
+2. Spring AI's Tool Call Advisor sends available tool definitions with their original schemas to the LLM
+3. LLM analyzes the request, decides which tool to call, and returns a tool call request with required arguments
+4. Tool Management dispatches and invokes the actual tool
+5. Result is sent back to the LLM
+6. LLM generates the final response incorporating the tool's result
+
+#### The Problem
+
+Tools are defined with fixed input parameters, but AI applications often need **additional context or metadata** from the LLM—such as reasoning or insights—alongside standard tool inputs. These extra fields are needed by the application layer, not the tool itself. Modifying every tool to accept them would violate separation of concerns, create tight coupling, and require changes across many existing tools or even be impossible for external (MCP) tools.
+
+#### The Tool Argument Augmenter Solution
+
+The Tool Argument Augmenter solves this elegantly by:
+
+1. **Dynamically extending** the tool's JSON Schema with additional fields (defined as Java Records)
+2. **Intercepting tool calls** to extract and process the augmented arguments
+3. **Optionally removing** the augmented arguments before passing input to the original tool
+
+This creates a transparent layer where the LLM sees an augmented schema and provides the extra information used by the AI application, while the underlying tool remains unchanged.
+The complete flow works as follows:
+
+<img style={{display: "block", margin: "auto"}} src="https://raw.githubusercontent.com/spring-io/spring-io-static/refs/heads/main/blog/tzolov/20251217/spring-ai-tool-arg-augmenter.png" width="800"/>
+
+1. **User Request:** User asks "What to wear in Amsterdam today?"
+2. **Tool Definition:** Tool Call Advisor adds the tool definitions with their original schemas to the request
+3. **Tool Definition Interception:** Before being sent to the LLM, the Tool Argument Augmenter intercepts the tool definition and augments its schema with additional (provided) arguments (e.g., `innerThoughts: String`, `memoryNotes: List<String>`)
+4. **LLM Response:** The LLM sees this enriched schema and provides both the original tool arguments (`location: "Amsterdam"`) AND the augmented arguments (`innerThoughts: "I need to check the weather to suggest appropriate clothing..."`)
+5. **Argument Processing**: When the tool call request returns, the augmenter extracts the augmented arguments and passes them to a **Consumer** for processing (logging, memory storage, analytics, etc.)
+6. **Tool Execution**: The original tool receives only its expected arguments—completely unaware of the augmentation
+
+> **MCP Compatible:** This technique works seamlessly with both local tools (e.g., `@Tool`) and MCP tools (e.g., `@McpTool`).
+
+## Quick Start
+
+#### Requirements
+
+- **Java 17** or higher
+- **Spring AI 2.0.0-SNAPSHOT+** or **Spring AI 1.1.3-SNAPSHOT+**
+
+The Tool Argument Augmenter is included in Spring AI's core module (`spring-ai-model`), so no additional dependencies are required beyond the standard Spring AI dependency.
+
+#### 1. Define Augmented Arguments
+
+The most powerful use case is adding an "inner thinking" field that captures the LLM's reasoning. Define your augmented arguments as a Java Record with `@ToolParam` annotations:
+
+```java
+import org.springframework.ai.tool.annotation.ToolParam;
+
+public record AgentThinking(
+    @ToolParam(description = "Your step-by-step reasoning for why you're calling this tool and what you expect", required = true) 
+    String innerThought,
+    
+    @ToolParam(description = "Confidence level (low, medium, high) in this tool choice", required = false) 
+    String confidence,
+    
+    @ToolParam(description = "Key insights to remember for future interactions", required = true) 
+    List<String> memoryNotes
+) {}
+```
+
+#### 2. Wrap Your Existing Tools
+
+Use the `AugmentedToolCallbackProvider` builder to wrap your existing tools:
+
+```java
+import org.springframework.ai.tool.augment.AugmentedToolCallbackProvider;
+
+// Your existing tool defined using Spring AI @Tool annotation
+public class WeatherTool {
+    @Tool(description = "Get the current weather for a given location")
+    public String weather(String location) {
+        return "The current weather in " + location + " is sunny with a temperature of 25°C.";
+    }
+}
+
+// Wrap with augmented arguments
+AugmentedToolCallbackProvider<AgentThinking> provider = 
+    AugmentedToolCallbackProvider.<AgentThinking>builder()
+        .toolObject(new WeatherTool())
+        .argumentType(AgentThinking.class)
+        .argumentConsumer(event -> {
+            // Access the augmented arguments via event.arguments()
+            AgentThinking thinking = event.arguments();
+            
+            // Log the LLM's reasoning - great for debugging and observability
+            log.info("Tool: {}, LLM Reasoning: {}, Confidence: {}",
+               event.toolDefinition().name(), thinking.innerThought(), thinking.confidence());
+                        
+            // Store insights in memory for future context
+            thinking.memoryNotes().forEach(note -> 
+                memorySystem.store(note)
+            );
+        })
+        .build();
+
+// Use with Spring AI ChatClient
+ChatClient chatClient = ChatClient.builder(chatModel)
+    .defaultToolCallbacks(provider)
+    .build();
+```
+
+#### 3. Wrap Your Existing ToolCallbackProviders
+
+You can wrap existing providers (including `MCP` tool providers) instead of individual tool objects:
+
+```java
+AugmentedToolCallbackProvider<AgentThinking> provider = 
+    AugmentedToolCallbackProvider.<AgentThinking>builder()
+        .delegate(existingProvider)  // Wrap an existing provider
+        .argumentType(AgentThinking.class)
+        .argumentConsumer(event -> processThinking(event.arguments()))
+        .build();
+
+// Use with Spring AI ChatClient
+ChatClient chatClient = ChatClient.builder(chatModel)
+    .defaultToolCallbacks(provider)
+    .build();
+```
+
+#### 4. What the LLM Sees
+
+When the LLM receives the tool definition, it sees the **augmented schema** with your additional fields:
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "location": {
+      "type": "string",
+      "description": "The location to get weather for"
+    },
+    "innerThought": {
+      "type": "string",
+      "description": "Your step-by-step reasoning for why you're calling this tool and what you expect"
+    },
+    "confidence": {
+      "type": "string",
+      "description": "Confidence level (low, medium, high) in this tool choice"
+    },
+    "memoryNotes": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Key insights to remember for future interactions"
+    }
+  },
+  "required": ["location", "innerThought", "memoryNotes"]
+}
+```
+
+#### 5. LLM Response with Reasoning
+
+The LLM will now provide its reasoning along with the tool call:
+
+```json
+{
+  "location": "Amsterdam",
+  "innerThought": "The user is asking about what to wear in Amsterdam today. I need to check the current weather conditions to provide appropriate clothing recommendations.",
+  "confidence": "high",
+  "memoryNotes": [
+    "User is planning an outing in Amsterdam",
+    "May need follow-up with specific activity questions"
+  ]
+}
+```
+
+Your consumer receives the `AgentThinking` record with all the reasoning, while the original tool receives only `{"location": "Amsterdam"}`.
+
+#### 6. Include Reasoning in Final Response (Optional)
+
+You can also include the LLM's reasoning in the final response using Spring AI's [Structured Output](https://docs.spring.io/spring-ai/reference/api/structured-output-converter.html). This is useful when you want to expose the model's thinking to users or downstream systems—not just capture it during tool calls.
+
+```java
+public record ResponseWithReasoning(
+    String response, 
+    AgentThinking thinking
+) {}
+
+var answer = chatClient
+    .prompt("What should I wear in Amsterdam today?")
+    .call()
+    .entity(ResponseWithReasoning.class); // structured response
+
+// Access both the response and the reasoning
+System.out.println("Answer: " + answer.response());
+System.out.println("Reasoning: " + answer.thinking().innerThought());
+```
+
+## Advanced Use Cases
+
+You can leverage this technique for various AI agent patterns. 
+The following examples demonstrate how to build memory-enhanced agents, capture chain-of-thought reasoning, collect analytics, and coordinate multi-agent systems.
+
+### AI Agent Memory Systems
+
+Combine Tool Argument Augmenter with Spring AI's advisor chain to build intelligent agents with memory. The captured inner thoughts become valuable context that improves reasoning across conversations:
+
+```java
+import org.springframework.ai.tool.augment.AugmentedToolCallbackProvider;
+
+AugmentedToolCallbackProvider<AgentThinking> provider = AugmentedToolCallbackProvider
+    .<AgentThinking>builder()
+    .toolObject(new MyTools())
+    .argumentType(AgentThinking.class)
+    .build();
+
+MessageWindowChatMemory chatMemory = MessageWindowChatMemory.builder()
+    .maxMessages(100)
+    .build();
+
+ChatClient chatClient = chatClientBuilder
+    .defaultToolCallbacks(provider)
+    .defaultAdvisors(
+        ToolCallAdvisor.builder()
+            .advisorOrder(BaseAdvisor.HIGHEST_PRECEDENCE + 300)
+            .conversationHistoryEnabled(false).build(),
+        MessageChatMemoryAdvisor.builder(chatMemory)
+            .order(Ordered.HIGHEST_PRECEDENCE + 1000).build())
+    .build();
+
+var answer = chatClient
+    .prompt("What is current weather in Paris?")
+    .call()
+    .entity(MyResponse.class);
+```
+
+This provides **tool-level reasoning capture**, **conversation continuity** via memory advisor, and **full observability** into LLM decision-making.
+
+> **Note:** Disable `ToolCallAdvisor`'s conversation history and ensure `MessageChatMemoryAdvisor` runs after it in the advisor chain.
+
+### Chain of Thought Reasoning
+
+Capture detailed step-by-step reasoning for complex tasks:
+
+```java
+public record ChainOfThought(
+    @ToolParam(description = "Break down your reasoning into numbered steps", required = true)
+    List<String> reasoningSteps,
+    
+    @ToolParam(description = "What alternative approaches did you consider?", required = false)
+    List<String> alternatives,
+    
+    @ToolParam(description = "Final conclusion that led to this tool choice", required = true)
+    String conclusion
+) {}
+
+// Process the reasoning chain
+Consumer<AugmentedArgumentEvent<ChainOfThought>> cotProcessor = event -> {
+    ChainOfThought cot = event.arguments();
+    log.info("=== Chain of Thought for {} ===", event.toolDefinition().name());
+    for (int i = 0; i < cot.reasoningSteps().size(); i++) {
+        log.info("Step {}: {}", i + 1, cot.reasoningSteps().get(i));
+    }
+    log.info("Conclusion: {}", cot.conclusion());
+    
+    // Store for analysis or fine-tuning data collection
+    reasoningStore.save(cot);
+};
+```
+
+### Tool Usage Analytics
+
+Track and analyze tool usage patterns for optimization and insights:
+
+```java
+public record ToolAnalytics(
+    @ToolParam(description = "Why did you choose this specific tool?", required = true)
+    String toolSelectionReason,
+    
+    @ToolParam(description = "What result do you expect from this tool?", required = false)
+    String expectedOutcome,
+    
+    @ToolParam(description = "User intent classification", required = true)
+    String userIntent
+) {}
+
+Consumer<AugmentedArgumentEvent<ToolAnalytics>> analyticsProcessor = event -> {
+    ToolAnalytics analytics = event.arguments();
+    String toolName = event.toolDefinition().name();
+    
+    metricsCollector.recordToolSelection(
+        toolName,
+        analytics.userIntent(),
+        analytics.toolSelectionReason()
+    );
+    
+    if (analytics.expectedOutcome() != null) {
+        // Compare expected vs actual outcomes for quality metrics
+        outcomeTracker.recordExpectation(toolName, analytics.expectedOutcome());
+    }
+};
+```
+
+### Multi-Agent Coordination
+
+Enable communication and coordination between multiple AI agents:
+
+```java
+public record AgentCoordination(
+    @ToolParam(description = "Your agent ID", required = true)
+    String agentId,
+    
+    @ToolParam(description = "Agents that should be notified of this action", required = false)
+    List<String> notifyAgents,
+    
+    @ToolParam(description = "Shared context for other agents", required = false)
+    String sharedContext,
+    
+    @ToolParam(description = "Priority level for coordination (low, normal, high, critical)", required = false)
+    String priority
+) {}
+
+Consumer<AugmentedArgumentEvent<AgentCoordination>> coordinationProcessor = event -> {
+    AgentCoordination coord = event.arguments();
+    String toolName = event.toolDefinition().name();
+    
+    if (coord.notifyAgents() != null && !coord.notifyAgents().isEmpty()) {
+        Message notification = Message.builder()
+            .from(coord.agentId())
+            .toolAction(toolName)
+            .content(coord.sharedContext())
+            .priority(coord.priority() != null ? coord.priority() : "normal")
+            .build();
+        
+        coord.notifyAgents().forEach(targetAgent -> 
+            messageBus.send(targetAgent, notification)
+        );
+    }
+};
+```
+
+## Best Practices
+
+- **Keep augmented arguments focused**: Define only the fields you actually need to capture. Too many additional fields can increase token consumption and confuse the model.
+- **Use descriptive field descriptions**: The `@ToolParam` description is what the LLM sees. Clear, specific descriptions lead to better quality responses.
+- **Consider required vs optional**: Mark fields as `required = true` only when you absolutely need them. Optional fields give the LLM flexibility.
+- **Monitor token usage**: Augmented schemas increase prompt size. Monitor token consumption, especially with many tools.
+
+## Conclusion
+
+The Tool Argument Augmenter provides a powerful, non-invasive way to capture LLM reasoning and metadata during tool execution. By dynamically extending tool schemas, you gain visibility into **why** an LLM makes decisions—not just what decisions it makes.
+
+This feature integrates seamlessly with Spring AI's existing tool calling infrastructure, working with both local `@Tool` methods and MCP tools without requiring any changes to the underlying implementations.
+
+> **🚀 Try It Yourself**: The complete runnable demo is available in the [recursive-advisor-with-memory](https://github.com/spring-projects/spring-ai-examples/tree/main/advisors/recursive-advisor-with-memory) example project.
+
+## Related Blog Posts
+
+- [Create Self-Improving AI Agents Using Spring AI Recursive Advisors](https://spring.io/blog/2025/11/04/spring-ai-recursive-advisors) - Learn how to build self-improving AI agents using recursive advisor patterns
+- [LLM-as-a-Judge Evaluation with Spring AI](https://spring.io/blog/2025/11/10/spring-ai-llm-as-judge-blog-post) - Use LLMs to evaluate and assess AI response quality
+- [Tool Response Formats in Spring AI](https://spring.io/blog/2025/11/25/spring-ai-tool-response-formats) - Control and customize how tool results are formatted and returned to the LLM
+- [Semantic Tool Search in Spring AI](https://spring.io/blog/2025/12/11/spring-ai-tool-search-tools-tzolov) - Dynamically discover and select the right tools using semantic search
+
+## Resources
+
+- [**Tool Argument Augmentation**](https://docs.spring.io/spring-ai/reference/2.0-SNAPSHOT/api/tools.html#tool-argument-augmentation)
+- **Example Project**: [tool-argument-augmenter-demo](https://github.com/spring-projects/spring-ai-examples/tree/main/advisors/tool-argument-augmenter-demo)
+- **Spring AI Tool Calling**: [Tools API Documentation](https://docs.spring.io/spring-ai/reference/api/tools.html)
+- **Spring AI Chat Client**: [ChatClient Documentation](https://docs.spring.io/spring-ai/reference/api/chatclient.html)
+- **Spring AI Advisors**: [Advisors API Guide](https://docs.spring.io/spring-ai/reference/api/advisors.html)

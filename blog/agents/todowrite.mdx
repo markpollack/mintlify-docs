@@ -1,0 +1,171 @@
+---
+title: "Spring AI Agentic Patterns (Part 3): Why Your AI Agent Forgets Tasks (And How to Fix It)"
+sidebarTitle: "Agentic Patterns (Part 3): Why Your..."
+description: "Have you ever asked an AI agent to perform a complex multi-step task, only to find it skipped a critical step halfway through? You're not alone."
+author: tzolov
+date: 2026-01-20
+---
+
+<img style={{display: "block", margin: "auto"}} align="right" src="https://raw.githubusercontent.com/spring-io/spring-io-static/refs/heads/main/blog/tzolov/20260120/agent-todo-write-logo-2.png" width="200" />
+
+Have you ever asked an AI agent to perform a complex multi-step task, only to find it skipped a critical step halfway through? You're not alone. 
+
+Research shows that LLMs struggle with "lost in the middle" failures—forgetting tasks buried in long contexts. 
+When your agent juggles file edits, test execution, and documentation updates, important steps can silently disappear. 
+One solution, inspired by Claude Code, is to make planning explicit and observable with the help of a dedicated `TodoWrite` tool.
+The result: agents that never skip steps and workflows you can observe in real-time.
+
+**This is Part 3 of our Spring AI Agentic Patterns series.** We've covered [Agent Skills](https://spring.io/blog/2026/01/13/spring-ai-generic-agent-skills) for modular capabilities and [AskUserQuestionTool](https://spring.io/blog/2026/01/16/spring-ai-ask-user-question-tool) for interactive workflows. Now we explore how `TodoWriteTool` brings structured task management to Spring AI agents.
+
+**Ready to dive in?** Skip to the [Getting Started](#getting-started) section.
+
+## What Is TodoWriteTool?
+
+`TodoWriteTool` is a Spring AI tool that enables LLMs to create, track, and update task lists during execution. Inspired by [Claude Code's TodoWrite](https://platform.claude.com/docs/en/agent-sdk/todo-tracking), it transforms implicit planning into explicit, trackable workflows. The full implementation is available on GitHub: [TodoWriteTool.java](https://github.com/spring-ai-community/spring-ai-agent-utils/blob/main/spring-ai-agent-utils/src/main/java/org/springaicommunity/agent/tools/TodoWriteTool.java)
+
+When an agent receives a complex task, such as "Add a dark mode toggle to the settings page and run tests", it uses `TodoWriteTool` to decompose it before execution:
+
+<img style={{display: "block", margin: "auto"}} src="https://raw.githubusercontent.com/spring-io/spring-io-static/refs/heads/main/blog/tzolov/20260120/todo-write-flow.png" width="800"/>
+
+The LLM calls the tool whenever it needs to update the plan—whether creating initial tasks, marking progress, or adding newly discovered work.
+
+The tool accepts a list of todo items, each with **id**, **content** (what needs to be done), and **status**.
+Each todo item follows a simple lifecycle:
+
+<img style={{display: "block", margin: "auto"}} src="https://raw.githubusercontent.com/spring-io/spring-io-static/refs/heads/main/blog/tzolov/20260120/todo-write-states.png" width="400"/>
+
+The tool enforces an important constraint: **only one task can be `in_progress` at a time**. This forces sequential, focused execution rather than scattered attempts at parallel work.
+
+Here's what real-time progress looks like during execution:
+
+```
+Progress: 2/4 tasks completed (50%)
+[✓] Find top 10 Tom Hanks movies
+[✓] Group movies in pairs
+[→] Print inverted titles
+[ ] Final summary
+```
+
+### How the LLM Knows When to Use It
+
+The [tool description](https://github.com/spring-ai-community/spring-ai-agent-utils/blob/8df9b26bdeb98cccfe65c445dea7611605d80e4c/spring-ai-agent-utils/src/main/java/org/springaicommunity/agent/tools/TodoWriteTool.java#L54-L242) instructs the LLM on when task tracking is appropriate:
+
+> *"Use this tool when a task requires 3 or more distinct steps or actions. Skip when there is only a single, straightforward task that can be completed in less than 3 trivial steps."*
+
+This self-governing behavior means the agent decides autonomously whether to create a task list based on complexity.
+
+💡 **Tip:** Additionally, for best results, use a system prompt with detailed task management instructions. The [MAIN_AGENT_SYSTEM_PROMPT_V2](https://github.com/spring-ai-community/spring-ai-agent-utils/blob/main/spring-ai-agent-utils/src/main/resources/prompt/MAIN_AGENT_SYSTEM_PROMPT_V2.md#task-management) provides a Claude Code-inspired example.
+
+
+⚠️ **Important:** The Todo-Write pattern relies on [Chat Memory](https://docs.spring.io/spring-ai/reference/api/chat-memory.html#page-title) to retain the todo list updates and relay them to the LLM. Additionally, enabling the [ToolCallAdvisor](https://docs.spring.io/spring-ai/reference/api/advisors-recursive.html#_toolcalladvisor) replaces the built-in ChatModel tool calling and ensures that all tool messages are logged in chat memory. See the full advisors configuration in [Getting Started](#getting-started) below.
+
+
+## Getting Started
+
+### 1. Add the Dependency
+
+```xml
+<dependency>
+    <groupId>org.springaicommunity</groupId>
+    <artifactId>spring-ai-agent-utils</artifactId>
+    <version>0.4.0</version>
+</dependency>
+```
+
+ℹ️ **Note:** Requires Spring AI version `2.0.0-SNAPSHOT` or `2.0.0-M2` when released.
+
+### 2. Configure Your Agent
+
+```java
+ChatClient chatClient = chatClientBuilder
+    .defaultTools(TodoWriteTool.builder().build())
+    .defaultAdvisors(
+        ToolCallAdvisor.builder().conversationHistoryEnabled(false).build(),
+        MessageChatMemoryAdvisor.builder(MessageWindowChatMemory.builder().build()).build())
+    .build();
+
+String response = chatClient.prompt()
+    .user("Find the top 10 Tom Hanks movies, group them in pairs, " +
+          "and print each title reversed. Use TodoWrite to organize your tasks.")
+    .call()
+    .content();
+```
+
+⚠️ **Important:** Setting `conversationHistoryEnabled(false)` disables the built-in tool-call history in favor of the `MessageChatMemoryAdvisor`.
+
+For a complete example with system prompts and additional tools, see the [todo-demo](https://github.com/spring-ai-community/spring-ai-agent-utils/tree/main/examples/todo-demo) project.
+
+### 3. (Optional) Event-Driven Progress Updates
+
+The tool publishes events that your application can use to update UIs in real-time.
+For example, define a dedicated ApplicationEvent and event listener:
+
+```java
+public class TodoUpdateEvent extends ApplicationEvent {
+    private final List<TodoItem> todos;
+    public TodoUpdateEvent(Object source, List<TodoItem> todos) {
+        super(source);
+        this.todos = todos;
+    }
+    public List<TodoItem> getTodos() { return todos; }
+}
+
+@Component
+public class TodoProgressListener {
+
+    @EventListener
+    public void onTodoUpdate(TodoUpdateEvent event) {
+        int completed = (int) event.getTodos().stream().filter(t -> t.status() == Todos.Status.completed).count();
+        int total = event.getTodos().size();
+
+        System.out.printf("\nProgress: %d/%d tasks completed (%.0f%%)\n", completed, total,
+                (completed * 100.0 / total));
+    }
+}
+```
+
+Then add the event publisher in your `todoEventHandler`:
+
+```java
+@Autowired
+ApplicationEventPublisher applicationEventPublisher;
+
+ChatClient chatClient = chatClientBuilder
+    .defaultTools(TodoWriteTool.builder()
+        // Publish todo update events
+        .todoEventHandler(event ->
+            applicationEventPublisher.publishEvent(new TodoUpdateEvent(this, event.todos())))
+        .build())	
+    // ...
+    .build();
+```
+
+## Conclusion
+
+TodoWriteTool brings structured task management to Spring AI agents, transforming implicit planning into explicit, observable workflows. By making the agent's plan visible and trackable, you get more reliable execution, better user experience, and easier debugging.
+
+**Key takeaway:** If your agent is dropping steps on complex tasks, add TodoWriteTool. The overhead is minimal; the LLM decides when tracking is needed based on task complexity.
+
+Combined with [Agent Skills](https://spring.io/blog/2026/01/13/spring-ai-generic-agent-skills) for domain knowledge and [AskUserQuestionTool](https://spring.io/blog/2026/01/16/spring-ai-ask-user-question-tool) for interactive clarification, TodoWriteTool completes the foundation for building reliable AI agents.
+
+**Next up:** In [Part 4](https://spring.io/blog/2026/01/27/spring-ai-agentic-patterns-4-task-subagents), we explore **Subagent Orchestration** with TaskTool, and in Part 5, the **Subagent Extension Framework** for protocol-agnostic agent orchestration.
+
+## Resources
+
+- **GitHub Repository**: [spring-ai-agent-utils](https://github.com/spring-ai-community/spring-ai-agent-utils)
+- **TodoWriteTool Documentation**: [TodoWriteTool.md](https://github.com/spring-ai-community/spring-ai-agent-utils/blob/main/spring-ai-agent-utils/docs/TodoWriteTool.md)
+- **Example Projects**:
+  - [todo-demo](https://github.com/spring-ai-community/spring-ai-agent-utils/tree/main/examples/todo-demo) - Focused TodoWriteTool demonstration
+  - [code-agent-demo](https://github.com/spring-ai-community/spring-ai-agent-utils/tree/main/examples/code-agent-demo) - Full toolkit integration
+
+#### Related
+- [Claude Code Todo Tracking](https://platform.claude.com/docs/en/agent-sdk/todo-tracking) - Original inspiration
+- [Dynamic Tool Discovery](https://spring.io/blog/2025/12/11/spring-ai-tool-search-tools-tzolov) - Efficient tool selection
+- [Tool Argument Augmentation](https://spring.io/blog/2025/12/23/spring-ai-tool-argument-augmenter-tzolov) - Capturing LLM reasoning
+
+#### Series Links
+- **Part 1**: [Agent Skills](https://spring.io/blog/2026/01/13/spring-ai-generic-agent-skills) - Modular, reusable capabilities
+- **Part 2**: [AskUserQuestionTool](https://spring.io/blog/2026/01/16/spring-ai-ask-user-question-tool) - Interactive workflows
+- **Part 3**: TodoWriteTool - Structured planning (this post)
+- **Part 4**: [Subagent Orchestration](https://spring.io/blog/2026/01/27/spring-ai-agentic-patterns-4-task-subagents) - Hierarchical agent architectures
+- **Part 5**: Subagent Extension Framework (coming soon) - Protocol-agnostic agent orchestration

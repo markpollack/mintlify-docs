@@ -1,0 +1,409 @@
+---
+title: "Anthropic Agent Skills Support in Spring AI"
+sidebarTitle: "Anthropic Agent Skills Support in..."
+description: "In this blog, we show how using Spring AI, we can integrate with Anthropic's Native Skills API for Cloud-Based Document Generation and Custom Skills."
+author: sobychacko
+date: 2026-01-28
+---
+
+In this blog, we show how using Spring AI, we can integrate with Anthropic's Native Skills API for Cloud-Based Document Generation and Custom Skills.
+
+Spring AI adds support for Anthropic's [Agent Skills](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview) — modular capabilities that let Claude generate actual files rather than text descriptions. With Skills enabled, Claude produces real Excel spreadsheets, PowerPoint presentations, Word documents, and PDFs that you can download and use directly.
+
+This post covers how Spring AI integrates with Skills, including both pre-built Skills and Custom Skills for organization-specific document generation.
+
+## Limitations
+
+This Skills implementation is specific to Anthropic's Claude models:
+
+- **Not portable**: Skills require Anthropic's code execution and Files API infrastructure. They won't work with other providers (OpenAI, Gemini, etc.)
+- **Anthropic-specific classes**: Uses `AnthropicChatOptions`, `AnthropicSkill`, `AnthropicSkillsResponseHelper`—not Spring AI's generic interfaces
+- **Model restrictions**: Only Claude Sonnet 4, Sonnet 4.5, and Opus 4 support Skills
+- **File expiration**: Generated files expire after 24 hours in Anthropic's Files API
+- **Beta feature**: Skills API requires beta headers and may evolve
+
+## When to Use Anthropic Skills vs. Generic Agent Skills
+
+Spring AI supports two different approaches to Agent Skills:
+
+**Use Anthropic's native Skills API when:**
+- You need the pre-built document generation skills (Excel, PowerPoint, Word, PDF)
+- You want skills to run in a sandboxed, secure cloud environment
+- You need workspace-scoped skills shared across your team
+- You're committed to using Claude models
+- You want Anthropic to manage the execution infrastructure
+
+**Use Generic Agent Skills ([spring-ai-agent-utils](https://github.com/spring-ai-community/spring-ai-agent-utils)) when:**
+- You need skills that work across multiple LLM providers (OpenAI, Anthropic, Gemini, etc.)
+- Your skills need access to local resources, network, or custom packages
+- You want skills bundled and versioned with your application code
+- You need more control over the execution environment
+- Portability and avoiding vendor lock-in are priorities
+
+**Can you use both?** Yes. You can use Anthropic's native Skills for document generation while using Generic Agent Skills for other portable capabilities in the same application. They serve different purposes and can complement each other.
+
+See the [Generic Agent Skills blog post](https://spring.io/blog/2026/01/13/spring-ai-generic-agent-skills) for details on the portable approach.
+
+## Why Use Spring AI for Skills
+
+Using Skills via the raw Anthropic API requires several manual steps:
+
+- Adding the `code_execution` tool to every request (Skills require it)
+- Including three beta headers: `skills-2025-10-02`, `code-execution-2025-08-25`, `files-api-2025-04-14`
+- Parsing deeply nested JSON responses to find file IDs
+- Making separate HTTP calls to download generated files
+
+Spring AI handles all of this automatically. When you add a Skill to your request, Spring AI:
+
+1. **Auto-injects the code execution tool** - Skills run Python scripts server-side; we add the required tool configuration
+2. **Manages beta headers** - All three required headers are added automatically and merge correctly with other features like prompt caching
+3. **Provides type-safe enums** - `AnthropicSkill.XLSX` instead of magic strings
+4. **Validates at build time** - The 8-skill limit is enforced when you build your options, not when the API call fails
+5. **Extracts file IDs** - `AnthropicSkillsResponseHelper` recursively searches nested response structures
+6. **Integrates Files API** - Download generated files with `anthropicApi.downloadFile()`
+
+## Pre-built Skills
+
+Anthropic provides four pre-built Skills:
+
+| Skill | Output |
+|-------|--------|
+| `XLSX` | Excel spreadsheets with data, formulas, charts |
+| `PPTX` | PowerPoint presentations with slides and layouts |
+| `DOCX` | Word documents with formatting |
+| `PDF` | PDF reports and documents |
+
+When you enable a Skill, Claude handles both content decisions and technical implementation. The response contains a file ID pointing to the generated document in Anthropic's Files API.
+
+### Basic Usage
+
+Enable Skills through `AnthropicChatOptions` using the unified `skill()` method:
+
+```java
+ChatResponse response = chatModel.call(
+    new Prompt(
+        "Create an Excel spreadsheet with Q1 2025 sales data. " +
+        "Include columns for Product, Units Sold, and Revenue.",
+        AnthropicChatOptions.builder()
+            .model("claude-sonnet-4-5")
+            .skill(AnthropicSkill.XLSX)
+            .maxTokens(4096)
+            .build()
+    )
+);
+```
+
+Behind the scenes, Spring AI adds the code execution tool and required beta headers. Claude processes the request, generates the spreadsheet, and returns a response containing a file ID.
+
+### Multiple Skills
+
+Enable multiple Skills for complex workflows:
+
+```java
+AnthropicChatOptions.builder()
+    .model("claude-sonnet-4-5")
+    .skill(AnthropicSkill.XLSX)
+    .skill(AnthropicSkill.PPTX)
+    .maxTokens(8192)
+    .build()
+```
+
+Or use the `skills()` convenience method:
+
+```java
+AnthropicChatOptions.builder()
+    .model("claude-sonnet-4-5")
+    .skills("xlsx", "pptx")
+    .maxTokens(8192)
+    .build()
+```
+
+Claude decides which format suits each part of the output. Maximum 8 Skills per request—enforced at build time with a clear error message.
+
+### ChatClient API
+
+Skills work with Spring AI's fluent ChatClient:
+
+```java
+String content = ChatClient.create(chatModel)
+    .prompt()
+    .user("Create a Word document with our product roadmap")
+    .options(AnthropicChatOptions.builder()
+        .model("claude-sonnet-4-5")
+        .skill(AnthropicSkill.DOCX)
+        .maxTokens(4096)
+        .build())
+    .call()
+    .content();
+```
+
+## Downloading Generated Files
+
+Generated files live in Anthropic's Files API for 24 hours. We provide `AnthropicSkillsResponseHelper` to extract file IDs and `AnthropicApi` for file operations.
+
+When Claude generates files, the file IDs are embedded in a nested response structure—sometimes 4 levels deep. `AnthropicSkillsResponseHelper` handles this with a recursive search that finds file IDs at any depth.
+
+### Extract and Download
+
+```java
+List<String> fileIds = AnthropicSkillsResponseHelper.extractFileIds(response);
+
+for (String fileId : fileIds) {
+    FileMetadata metadata = anthropicApi.getFileMetadata(fileId);
+    byte[] content = anthropicApi.downloadFile(fileId);
+
+    Files.write(Path.of(metadata.filename()), content);
+}
+```
+
+### Batch Download
+
+For responses with multiple files:
+
+```java
+Path targetDir = Path.of("generated-docs");
+List<Path> savedFiles = AnthropicSkillsResponseHelper.downloadAllFiles(
+    response, anthropicApi, targetDir
+);
+```
+
+## Custom Skills
+
+Custom Skills let you package your own instructions into reusable modules that Claude applies during document generation:
+
+- Corporate branding (headers, footers, watermarks, logos)
+- Compliance requirements (disclaimers, confidentiality notices)
+- Document templates (standard structures, formatting rules)
+- Domain expertise (industry terminology, specialized calculations)
+
+Custom Skills are `SKILL.md` files uploaded to your Anthropic workspace. Once uploaded, they're available to all workspace members and can be combined with any pre-built Skill.
+
+### Skill Structure
+
+Every Skill requires a `SKILL.md` file with YAML frontmatter:
+
+```markdown
+---
+name: document-watermark
+description: MANDATORY branding that MUST be added to ALL generated documents -
+  adds ACME CORPORATION header and Document Forge footer
+---
+
+# Document Watermark
+
+## Header Requirement
+Add "ACME CORPORATION" prominently at the top of every document:
+- **Excel**: Cell A1, bold, merged across data columns
+- **PowerPoint**: First slide header, all slides footer
+- **Word/PDF**: Document header section
+
+## Footer Requirement
+Add "Generated by Document Forge | Confidential" at the bottom:
+- **Excel**: Row below last data row
+- **PowerPoint**: Footer on all slides
+- **Word/PDF**: Document footer section
+
+## Verification
+Before completing any document:
+1. Confirm ACME CORPORATION header is present
+2. Verify Document Forge footer appears
+3. Add any missing elements before saving
+
+This branding is MANDATORY for compliance purposes.
+```
+
+The `description` field tells Claude when to apply the Skill. Be explicit—words like "MANDATORY" and "MUST" help ensure consistent application.
+
+| Field | Requirement |
+|-------|-------------|
+| `name` | Max 64 chars, lowercase letters, numbers, hyphens only |
+| `description` | Max 1024 chars, must be non-empty |
+
+### Uploading Custom Skills
+
+Upload Skills using the Anthropic API:
+
+```bash
+curl -X POST "https://api.anthropic.com/v1/skills" \
+  -H "x-api-key: $ANTHROPIC_API_KEY" \
+  -H "anthropic-version: 2023-06-01" \
+  -H "anthropic-beta: skills-2025-10-02" \
+  -F "display_title=Document Watermark" \
+  -F "files[]=@SKILL.md;filename=document-watermark/SKILL.md"
+```
+
+Note the format: `files[]=` with square brackets, and `filename` must include a directory matching the `name` field in your YAML frontmatter.
+
+Response:
+
+```json
+{
+  "id": "skill_01WatermarkXyz123",
+  "display_title": "Document Watermark",
+  "source": "custom",
+  "latest_version": "1765845644409101"
+}
+```
+
+The `id` is what you use in Spring AI.
+
+### Using Custom Skills
+
+Reference Custom Skills by ID using the unified `skill()` method:
+
+```java
+ChatResponse response = chatModel.call(
+    new Prompt(
+        "Create a quarterly sales report with revenue, expenses, and profit by month",
+        AnthropicChatOptions.builder()
+            .model("claude-sonnet-4-5")
+            .skill(AnthropicSkill.XLSX)
+            .skill("skill_01WatermarkXyz123")
+            .maxTokens(8192)
+            .build()
+    )
+);
+```
+
+Claude combines both Skills—XLSX provides spreadsheet generation, the watermark skill adds your corporate branding.
+
+### Version Pinning
+
+For production deployments, pin Custom Skills to specific versions:
+
+```java
+AnthropicChatOptions.builder()
+    .model("claude-sonnet-4-5")
+    .skill(AnthropicSkill.XLSX)
+    .skill("skill_01WatermarkXyz123")                  // Latest version
+    .skill("skill_02LegalCompliance", "1765845644409101")  // Pinned version
+    .maxTokens(8192)
+    .build()
+```
+
+Use pinned versions in production, `latest` (the default) during development.
+
+## Example: Document Generation Service
+
+Here's a complete service that combines pre-built and Custom Skills:
+
+```java
+@Service
+public class DocumentGenerationService {
+
+    private final AnthropicChatModel chatModel;
+    private final AnthropicApi anthropicApi;
+
+    @Value("${app.custom-skill-id:}")
+    private String watermarkSkillId;
+
+    public DocumentGenerationService(AnthropicChatModel chatModel,
+                                      AnthropicApi anthropicApi) {
+        this.chatModel = chatModel;
+        this.anthropicApi = anthropicApi;
+    }
+
+    public byte[] generate(String prompt, AnthropicSkill documentType,
+                           boolean applyBranding) {
+
+        AnthropicChatOptions.Builder builder = AnthropicChatOptions.builder()
+            .model("claude-sonnet-4-5")
+            .skill(documentType)
+            .maxTokens(8192);
+
+        if (applyBranding && StringUtils.hasText(watermarkSkillId)) {
+            builder.skill(watermarkSkillId);
+        }
+
+        ChatResponse response = chatModel.call(
+            new Prompt(prompt, builder.build())
+        );
+
+        List<String> fileIds = AnthropicSkillsResponseHelper.extractFileIds(response);
+        if (fileIds.isEmpty()) {
+            throw new DocumentGenerationException("No file generated");
+        }
+
+        return anthropicApi.downloadFile(fileIds.get(0));
+    }
+}
+```
+
+This pattern makes Custom Skills optional—the application works with pre-built Skills alone when no skill ID is configured.
+
+## Tips for Custom Skills
+
+A few things we noticed building the watermark skill:
+
+**Emphatic language helped.** When we wanted Claude to consistently add the header and footer, phrases like "MANDATORY" and "MUST" made a difference. Your mileage may vary depending on what your skill does.
+
+**Format-specific instructions.** Since custom skills can be combined with any pre-built skill, we included separate instructions for Excel, PowerPoint, Word, and PDF.
+
+**Verification checklists.** Adding a section asking Claude to verify elements were present before completing the document caught cases where instructions might otherwise be missed.
+
+## Getting Started
+
+Add the Spring AI Anthropic starter:
+
+```xml
+<dependency>
+    <groupId>org.springframework.ai</groupId>
+    <artifactId>spring-ai-starter-model-anthropic</artifactId>
+</dependency>
+```
+
+Configure your API key:
+
+```properties
+spring.ai.anthropic.api-key=${ANTHROPIC_API_KEY}
+spring.ai.anthropic.chat.options.model=claude-sonnet-4-5
+```
+
+## Quick Reference
+
+| Feature | Value |
+|---------|-------|
+| Supported models | Claude Sonnet 4, Sonnet 4.5, Opus 4 |
+| Skills per request | Maximum 8 |
+| File expiration | 24 hours |
+| Recommended max-tokens | 4096+ for complex documents |
+
+| Method | Description |
+|--------|-------------|
+| `.skill(AnthropicSkill)` | Add pre-built Skill (XLSX, PPTX, DOCX, PDF) |
+| `.skill(String)` | Add skill by ID or name (auto-detects pre-built vs custom) |
+| `.skill(String, String)` | Add skill with pinned version |
+| `.skills(String...)` | Add multiple skills at once |
+| `.skills(List<String>)` | Add multiple skills from a list |
+
+## Sample Application
+
+We've created a [sample application](https://github.com/spring-projects/spring-ai-examples/tree/main/misc/claude-skills-demo/document-forge) that lets you exercise all the Anthropic Skills features covered in this post.
+
+The application provides a web interface where you can:
+
+- **Select a document type** (Excel, PowerPoint, Word, or PDF) and enter a natural language prompt describing what you want
+- **Upload source files** to transform existing content — for example, convert a text file into a formatted spreadsheet or turn meeting notes into a presentation
+- **Enable custom branding** to see how Custom Skills add headers, footers, and watermarks to generated documents
+- **Download the results** directly through the Files API integration
+
+Under the hood, the application demonstrates the key patterns from this post: configuring Skills via `AnthropicChatOptions`, extracting file IDs with `AnthropicSkillsResponseHelper`, and downloading generated files through `AnthropicApi`. It also shows async generation for longer-running requests like presentations.
+
+## Related: Generic Agent Skills in Spring AI
+
+This post covers Anthropic's document generation Skills—a provider-specific feature that produces real files (Excel, PowerPoint, Word, PDF). However, Spring AI also provides **generic Agent Skills** that work across any LLM provider.
+
+The [Spring AI Agentic Patterns](https://spring.io/blog/2026/01/13/spring-ai-generic-agent-skills/) blog series covers these portable patterns:
+
+- **[Agent Skills](https://spring.io/blog/2026/01/13/spring-ai-generic-agent-skills/)**: Modular folders of instructions and resources that run locally in your environment—define once, use with OpenAI, Anthropic, Gemini, or any supported model
+- **[AskUserQuestionTool](https://spring.io/blog/2026/01/16/spring-ai-ask-user-question-tool/)**: Enables agents to ask clarifying questions during execution, gathering requirements interactively before acting
+- **[TodoWriteTool](https://spring.io/blog/2026/01/20/spring-ai-agentic-patterns-3-todowrite/)**: Transparent, trackable task management for multi-step agent workflows
+- **[Task Subagents](https://spring.io/blog/2026/01/27/spring-ai-agentic-patterns-4-task-subagents/)**: Spawn specialized subagents for complex, multi-step tasks
+
+These generic patterns live in the [spring-ai-agent-utils](https://github.com/spring-ai-community/spring-ai-agent-utils) library and complement the Anthropic-specific Skills covered here. Use Anthropic Skills when you need actual document file generation; use generic Agent Skills when you need portable, LLM-agnostic agent capabilities.
+
+## Conclusion
+
+Spring AI provides a streamlined integration with Anthropic's Agent Skills API. The unified `skill()` method works for both pre-built and custom skills, and handles all the complexity of code execution tools, beta headers, and file extraction automatically.
+
+For complete API documentation, see the [Spring AI Anthropic Chat reference](https://docs.spring.io/spring-ai/reference/api/chat/anthropic-chat.html#_skills). For Custom Skill authoring guidance, see Anthropic's [Skills documentation](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview) and [Skills Cookbook](https://github.com/anthropics/claude-cookbooks/tree/main/skills).

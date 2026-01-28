@@ -1,0 +1,241 @@
+---
+title: "Repository Vector Search Methods"
+sidebarTitle: "Repository Vector Search Methods"
+description: "The emergence of Large Language Models (LLM) has propelled Generative AI and surfaced one of its key components to a broad audience:..."
+author: mp911de
+date: 2025-05-23
+---
+
+The emergence of Large Language Models (LLM) has propelled Generative AI and surfaced one of its key components to a broad audience: [Embeddings](https://en.wikipedia.org/wiki/Word_embedding). 
+
+Embeddings are a [vector representation](https://en.wikipedia.org/wiki/Vector_space) of data in a high-dimensional space capturing their semantic meaning. Vector representations allow for more efficient and effective search (Vector Search) of similar items. Vector search is typically used to build [Retrieval-augmented generation (RAG)](https://en.wikipedia.org/wiki/Retrieval-augmented_generation) systems and so there is demand for vector databases. 
+
+While new vector databases are on the rise, existing database engines are gradually incorporating vector search capabilities leading to two main types of databases:
+
+* Dedicated Vector Databases
+* Database Engines with Vector Search Capabilities
+
+Dedicated Vector Databases originate in the need for searching for similar items in high-dimensional spaces. They are optimized for this purpose and often use specialized indexing techniques to improve search performance. Examples include [Pinecone](https://www.pinecone.io/), [Weaviate](https://weaviate.io/), [Milvus](https://milvus.io/), and [Qdrant](https://qdrant.tech/). All of these are projects emerged around the early 2020s.
+
+A Vector Search typically requires a vector, which is an array of single-precision `float` numbers, a namespace (something like a table or collection) and a Top K (the number of results to return) argument. Vector search then run an Approximate Nearest Neighbor (ANN) or k-Nearest Neighbors (kNN) search.
+Those databases allow additional filtering similarity and metadata fields, however, the core of the search gravitates around vector representations.
+
+Existing Database Engines such as Postgres (pgvector), Oracle, and MongoDB have gradually added vector search capabilities to their engines. 
+They are not dedicated vector databases but rather general-purpose databases with vector search capabilities. Their strength lies in their ability to handle a wide range of data types and queries, especially when it comes to combining vector search with traditional queries. They also have a long history of supporting administrative tasks with a well-understood operating model for backup and recovery, scaling, and maintenance.
+Another aspect to consider is that these databases are already being used in production, containing large amounts of existing data.
+
+## Elephant in the Room
+
+[Spring AI](https://docs.spring.io/spring-ai/reference/api/vectordbs.html) has a wide range of integrations with vector stores.
+
+The obvious question is: "Why has Spring AI support for Vector Search and Spring Data does not?". And why does that even matter?
+
+The goal of Spring AI is to simplify the process of building AI-powered applications by providing a consistent programming model and abstractions. It focuses on integrating AI capabilities into Spring applications and provides a unified API for working with various AI models and services. 
+
+AI is a hot topic: Several database vendors have contributed their integration for vector search to Spring AI to enable use-cases such as [Retrieval Augmented Generation](https://docs.spring.io/spring-ai/reference/concepts.html#concept-rag). This is a great example of how Open Source can drive innovation and collaboration in the database space.
+
+When we consider what's after the peak of AI's hype cycle, we are faced with day-2 operations. Data has a lifecycle, new LLM models come and go, some are better for certain tasks or languages than others. While Spring AI's `VectorStore` has the means to reflect of data lifecycle to some extent, it is by no means its primary focus.
+
+And here comes Spring Data into play. Spring Data is all about data models, access, and data lifecycle. It provides a consistent programming model for accessing different data stores, including relational databases, NoSQL databases, and more. Spring Data's focus is on simplifying data access and management, making it easier to work with various data sources in a consistent way.
+
+Wouldn't it then make sense to have Vector Search capabilities in Spring Data? 
+
+Yes, it would.
+
+## Vector Search in Spring Data
+
+With Spring Data 3.5, we've introduced a `Vector` type to simplify usage of vector data in entities.
+
+Vector data types are not common in typical domain models.
+The closest resemblance of vector data has been geospatial data types such as `Point`, `Polygon`, etc. but even those are not common.
+Domain models rather consist of primitive types and value types reflecting the domain they are used in.
+
+Vector properties use either vendor-specific types (such as Cassandra's `CqlVector`) or use some sort of array, like `float[]`. In the latter case, using arrays introduces quite some accidental complexity: Java arrays are pointers. Their underlying actual array data is mutable. Carrying arrays around isn't too common either.
+
+Your domain model can leverage `Vector` property type reducing the risk of accidentally mutating the underlying data and giving the otherwise `float[]` a semantic context. Persisting and retrieving `Vector` properties is handled by Spring Data for modules where Spring Data handles object mapping. For JPA, you will require additional converters.
+
+```java
+Vector vector = Vector.of(0.0001f, 1.12345f, 2.23456f, 3.34567f, 4.45678f);
+```
+
+`Vector.of(…)` creates an immutable `Vector` instance and a copy of the given input array. While this is useful for most scenarios, performance-sensitive arrangements that want to reduce GC pressure can retain the reference to the original array:
+
+```java
+Vector vector = Vector.unsafe(new float[]{0.0001f, 1.12345f, 2.23456f, 3.34567f, 4.45678f});
+```
+
+You can obtain a safe (copied) variant of the `float[]` array by calling `toFloatArray()` respective `toDoubleArray()` if you want to use `double[]`. Alternatively, you can access the `Vector`'s source through `getSource()`.
+
+Depending on your data store, you might need to equip your data model with additional annotations to indicate e.g. the number of dimensions or its precision.
+
+When running a Vector search operation, each database uses a very different API. Let's take a look at MongoDB and Apache Cassandra.
+
+In MongoDB, Vector Search is used through its Aggregation Framework requiring an aggregation stage:
+
+```java
+class Comment {
+
+  String id;
+  String language;
+  String comment;
+  Vector embedding;
+
+  // getters, setters, …
+}
+
+VectorSearchOperation vectorSearch = VectorSearchOperation.search("euclidean-index")
+  .path("embedding")
+  .vector(0.0001f, 1.12345f, 2.23456f, 3.34567f, 4.45678f) // float[], Vector, or Mongo's BinaryVector
+  .limit(10) // Top-K
+  .numCandidates(200)
+  .filter(where("language").is("DE"))
+  .searchType(SearchType.ANN)
+  .withSearchScore();
+
+AggregationResults<Document> results = template.aggregate(newAggregation(vectorSearch),
+  Comment.class, Document.class);
+```
+
+`VectorSearchOperation` offers a fluent API guiding you through each step of the operation reflecting the underlying MongoDB API in a convenient way.
+
+Let's have a look at Apache Cassandra. Cassandra uses CQL (Cassandra Query Language) to run queries against the database. Cassandra Vector Search uses the same approach. With Cassandra, Spring Data users have the choice to either use Spring Data Cassandra's `Query` API or the native CQL API to run a Vector Search:
+
+```java
+@Table("comments")
+class CommentVectorSearchResult {
+
+  @Id String id;
+  double score;
+  String language;
+  String comment;
+  
+  // getters, setters, …
+}
+
+CassandraTemplate template = …
+Query query = Query.select(Columns.from("id", "language", "comment")
+                                  .select("embedding", it -> it.similarity(Vector.of(1.1f, 2.2f)).cosine().as("score")))
+  .sort(VectorSort.ann("embedding", Vector.of(1.1f, 2.2f)))
+  .limit(10);
+
+List<VectorSearchResult> select = template.select(query, VectorSearchResult.class);
+```
+
+The CQL variant would look like this:
+
+```java
+CassandraTemplate template = …
+
+List<Map<String, Object>> result = template.getCqlOperations().queryForList("""
+    SELECT id, language, comment, similarity_cosine(embedding, ?0) AS score
+    FROM my_table 
+    ORDER BY embedding ANN OF ?0 
+    LIMIT ?1
+    """, CqlVector.newInstance(1.1f, 2.2f), 10);
+```
+
+All in all these are small and simple examples of how to use Vector Search in Spring Data.
+
+Coming from a domain model perspective, representing search results is different from representing the domain model itself.
+Clearly, one could favor Java Records over classes but that isn't what the differences are about. Have you noticed the additional `CommentVectorSearchResult` class or `List<Document>` (MongoDB's native document type)? Cassandra has no detached raw type that you could use to consume result so we need `CommentVectorSearchResult` as dedicated type to map this specific Cassandra search result. We not only want to access domain data, but also the score. MongoDB's Java driver ships with a `Document` type that behaves is essentially a `Map`.  
+
+That's not how we envisioned a modern programming model.
+
+When searching for items, the result is not a list of domain objects but rather a list of search results. How do we even represent those?
+And can't we have a uniform programming model that combines the simplicity of expressing what I want with the power of the underlying database?
+
+## Vector Search Methods
+
+If it is a search result, then it is a `SearchResult<T>`. What if repository methods could return `SearchResults<T>`? Searching is a slightly different concept than querying (finding) entities. Beyond that, search methods would work similarly to existing query methods.
+
+```java
+interface CommentRepository extends Repository<Comment, String> {
+
+  @VectorSearch(indexName = "euclidean-index")
+  SearchResults<Comment> searchTop10ByLanguageAndEmbeddingNear(String language, Vector vector,
+      Similarity similarityThreshold);
+
+  @VectorSearch(indexName = "euclidean-index")
+  SearchResults<Comment> searchByLanguageAndEmbeddingWithin(String language, Vector vector,
+      Range<Similarity> range, Limit topK);
+}
+
+SearchResults<Comment> results = repository.searchTop10ByLanguageAndEmbeddingNear("DE", Vector.of(0.0001f, 1.12345f, 2.23456f, 3.34567f, 4.45678f), Similarity.of(0.9));
+
+for (SearchResult<Comment> result : results) {
+  Score score= result.getScore();
+  Comment comment = result.getContent();
+  // …
+}
+```
+
+The example above shows a search method that runs a Vector search. Searching in MongoDB requires an index hint that is specific to MongoDB. Beyond that, query derivation creates the pre-filter to filter by `language`. 
+By leveraging `Near` and `Within` keywords, Spring Data MongoDB is able to associate the given `Vector` and `Similarity` predicate to customize the actual Vector Search operation. The result is returned as `SearchResults` providing access to the found entity and its score respective similarity value.
+
+Using Vector Search with Postgres or Oracle is even simpler. The following example shows a Vector Search method in a Spring Data JPA repository through Hibernate's [`hibernate-vector` module](https://docs.jboss.org/hibernate/stable/orm/userguide/html_single/Hibernate_User_Guide.html#vector-module):
+
+```java
+interface CommentRepository extends Repository<Comment, String> {
+
+  SearchResults<Comment> searchTop10ByLanguageAndEmbeddingNear(String language, Vector vector,
+      Score scoreThreshold);
+
+  SearchResults<Comment> searchByLanguageAndEmbeddingWithin(String language, Vector vector,
+      Range<Similarity> range, Limit topK);
+}
+```
+
+`Near` and `Within` Search methods require a `Vector` and a `Score`, `Similarity` (subtype of Score), or `Range<Score>` parameter to determine how similarity/distance is calculated. Traditionally, query methods are intended to express predicates of a query while a typical Vector search is more about the Top-K limiting. That is something we have to consider in the future.
+
+Search methods can also leverage annotations in the same way that query methods do. The following example shows a search method in a Spring Data JPA:
+
+```java
+interface CommentRepository extends Repository<Comment, Integer> {
+
+  @Query("""
+      SELECT c, cosine_distance(c.embedding, :embedding) as distance FROM Comment c
+      WHERE c.language = :language
+          AND cosine_distance(c.embedding, :embedding) <= :distance
+      ORDER BY cosine_distance(c.embedding, :embedding) asc
+      """)
+    SearchResults<Comment> searchAnnotatedByLanguage(String language, Vector embedding, Score distance);
+}
+```
+
+While it's not obvious, pgvector and Oracle calculate distances to compute a score. Spring Data allows consuming the native score value either directly or, when using `Similarity.of(…)` as argument with the appropriate `ScoringFunction`, Spring Data normalizes the native score into a similarity range between 0 and 1.
+
+```java
+// Using a native score
+SearchResults<Comment> results = repository.searchAnnotatedByLanguage(…, Score.of(0.1, ScoringFunction.cosine()));
+
+// SearchResult.score will be an instance of Similarity
+SearchResults<Comment> results = repository.searchAnnotatedByLanguage(…, Similarity.of(0.9, ScoringFunction.cosine()));
+```
+
+A final note on `Vector` with JPA. When using JPA, you can use `Vector` in your domain model to store the vector assuming you have configured an `AttributeConverter` to convert the `Vector` into a database type. 
+However, when using Hibernate's distance methods (such as `cosine_distance`), Hibernate doesn't consider any Attribute Converters, hence your model must resort to using `float[]` or `double[]` as embedding type:
+
+```java
+@Table
+class Comment {
+
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Integer id;
+  
+  private String language;
+  private String comment;
+  
+  @JdbcTypeCode(SqlTypes.VECTOR)
+  @Array(length = 5)
+  private float[] embedding;
+}
+```
+
+## Conclusion
+
+We've explored the world of Vector Search and how it fits into the Spring ecosystem along with Vector Search origins in Spring AI. Support for the `Vector` type ships with Spring Data 3.5 (2025.0) in the May 2025 release.
+
+Vector Search Methods are a preview feature of the Spring Data 4.0 (2025.1) release train with first implementations for JPA through Hibernate Vector, MongoDB and Apache Cassandra. We're excited to hear what you think about Vector Search methods and how we can improve them further.
+
+You can find the documentation about Vector Search in the reference documentation, in [JPA](https://docs.spring.io/spring-data/jpa/reference/4.0/repositories/vector-search.html), [MongoDB](https://docs.spring.io/spring-data/mongodb/reference/5.0/mongodb/repositories/vector-search.html), and [Cassandra](https://docs.spring.io/spring-data/cassandra/reference/5.0/cassandra/repositories/vector-search.html).
