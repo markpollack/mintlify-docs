@@ -15,6 +15,11 @@
   },
   "anchors": [
     {
+      "name": "Blog",
+      "icon": "newspaper",
+      "url": "/blog/index"
+    },
+    {
       "name": "GitHub",
       "icon": "github",
       "url": "https://github.com/spring-ai-community"
