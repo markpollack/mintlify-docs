@@ -10,7 +10,7 @@ This guide walks project leads through adopting the shared [community-workflows]
 Before starting, ensure you have:
 
 - A repository under the `spring-ai-community` GitHub organization
-- Maven wrapper (`./mvnw`) in your repository root
+- Maven wrapper (`./mvnw`) in your repository root — if missing, run `mvn wrapper:wrapper` to generate it
 - Standard Maven project structure
 - Repository admin access (for configuring secrets)
 
@@ -139,13 +139,31 @@ The release workflow deploys with `-Prelease`, which activates a Maven profile t
     ```xml
     <parent>
       <groupId>org.springaicommunity</groupId>
-      <artifactId>community-parent</artifactId>
-      <version>0.1.0-SNAPSHOT</version>
+      <artifactId>spring-ai-community-parent</artifactId>
+      <version>1.0.0-SNAPSHOT</version>
       <relativePath/>
     </parent>
     ```
 
-    This gives you the full release profile automatically — `central-publishing-maven-plugin`, `maven-gpg-plugin`, `maven-source-plugin`, and `maven-javadoc-plugin` are all preconfigured.
+    This gives you the full release profile automatically — `central-publishing-maven-plugin`, `maven-gpg-plugin`, `maven-source-plugin`, and `maven-javadoc-plugin` are all preconfigured. It also provides `distributionManagement` for snapshot publishing.
+
+    You must add the Central snapshots repository so Maven can resolve the parent POM:
+
+    ```xml
+    <repositories>
+      <repository>
+        <id>central-snapshots</id>
+        <name>Maven Central Snapshots</name>
+        <url>https://central.sonatype.com/repository/maven-snapshots/</url>
+        <snapshots>
+          <enabled>true</enabled>
+        </snapshots>
+        <releases>
+          <enabled>false</enabled>
+        </releases>
+      </repository>
+    </repositories>
+    ```
   </Tab>
   <Tab title="Without community-parent">
     If your project does not use `community-parent`, add a `release` profile to your root `pom.xml` manually:
@@ -193,6 +211,17 @@ The release workflow deploys with `-Prelease`, which activates a Maven profile t
     ```
 
     You must also include `maven-source-plugin` and `maven-javadoc-plugin` in the release profile — Maven Central requires source and javadoc JARs.
+
+    You also need `distributionManagement` for snapshot publishing:
+
+    ```xml
+    <distributionManagement>
+      <snapshotRepository>
+        <id>central</id>
+        <url>https://central.sonatype.com/repository/maven-snapshots/</url>
+      </snapshotRepository>
+    </distributionManagement>
+    ```
   </Tab>
 </Tabs>
 
@@ -258,6 +287,7 @@ When `pr-based-releases` is set to `true`, merging a PR that changes `release.cu
 | [agent-judge](https://github.com/spring-ai-community/agent-judge) | Judge framework for evaluating AI outputs | Simple |
 | [agent-client](https://github.com/spring-ai-community/spring-ai-agents) | Agent client for Spring AI | With CLI |
 | [claude-agent-sdk-java](https://github.com/spring-ai-community/claude-agent-sdk-java) | Claude Code SDK for Java | With CLI |
+| [spring-ai-replicate](https://github.com/spring-ai-community/spring-ai-replicate) | Spring AI integration for Replicate | Simple |
 
 ## CLI Tools Variant
 
@@ -307,6 +337,18 @@ Additional inputs for CLI variants:
 <AccordionGroup>
   <Accordion title="Secrets not available in workflow">
     Organization-level secrets must be explicitly granted access to your repository. Ask an org admin to add your repository to the secret's access list under **Organization Settings → Secrets → Repository access**.
+  </Accordion>
+
+  <Accordion title="Non-resolvable parent POM">
+    If CI fails with `Non-resolvable parent POM for ... spring-ai-community-parent`, your POM is missing the Central snapshots repository. Add it to your `repositories` section:
+    ```xml
+    <repository>
+      <id>central-snapshots</id>
+      <url>https://central.sonatype.com/repository/maven-snapshots/</url>
+      <snapshots><enabled>true</enabled></snapshots>
+      <releases><enabled>false</enabled></releases>
+    </repository>
+    ```
   </Accordion>
 
   <Accordion title="SNAPSHOT references found during release">
