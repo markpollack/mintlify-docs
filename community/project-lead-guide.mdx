@@ -1,0 +1,331 @@
+---
+title: "Project Lead Guide"
+description: "Step-by-step setup for CI/CD, snapshots, and releases using shared community workflows"
+---
+
+This guide walks project leads through adopting the shared [community-workflows](https://github.com/spring-ai-community/community-workflows) infrastructure for CI, snapshot publishing, and Maven Central releases.
+
+## Prerequisites
+
+Before starting, ensure you have:
+
+- A repository under the `spring-ai-community` GitHub organization
+- Maven wrapper (`./mvnw`) in your repository root
+- Standard Maven project structure
+- Repository admin access (for configuring secrets)
+
+## Step 1: Add CI Workflow
+
+Create `.github/workflows/ci.yml` in your repository:
+
+```yaml
+name: CI Build
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    uses: spring-ai-community/community-workflows/.github/workflows/ci-build.yml@main
+```
+
+This runs `clean verify -B` on every push and PR. Optional inputs:
+
+| Input | Default | Description |
+|-------|---------|-------------|
+| `java-version` | `17` | Java version |
+| `java-distribution` | `temurin` | Java distribution |
+| `maven-goals` | `clean verify -B` | Maven goals to run |
+| `skip-tests` | `false` | Skip tests |
+| `upload-test-results` | `true` | Upload Surefire reports as artifacts |
+
+## Step 2: Add Snapshot Publishing
+
+Create `.github/workflows/publish-snapshot.yml`:
+
+```yaml
+name: Publish Snapshot
+on:
+  push:
+    branches: [main]
+
+jobs:
+  publish:
+    uses: spring-ai-community/community-workflows/.github/workflows/publish-snapshot.yml@main
+    secrets:
+      MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
+      MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
+```
+
+Every push to `main` publishes a SNAPSHOT to Maven Central. This requires the `MAVEN_USERNAME` and `MAVEN_PASSWORD` secrets (see [Secrets Configuration](#secrets-configuration)).
+
+## Step 3: Add Release Workflow
+
+Create `.github/workflows/release.yml`:
+
+```yaml
+name: Release
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., 0.1.0)'
+        required: true
+
+jobs:
+  release:
+    uses: spring-ai-community/community-workflows/.github/workflows/maven-central-release.yml@main
+    with:
+      version: ${{ inputs.version }}
+    secrets:
+      MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
+      MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
+      GPG_SECRET_KEY: ${{ secrets.GPG_SECRET_KEY }}
+      GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+```
+
+The release workflow:
+1. Sets the POM version to the specified release version
+2. Verifies no SNAPSHOT dependencies remain
+3. Builds and runs tests
+4. Deploys to Maven Central with GPG signing (using the `release` profile)
+5. Creates a Git tag (e.g., `v0.1.0`) and GitHub Release
+
+Optional inputs:
+
+| Input | Default | Description |
+|-------|---------|-------------|
+| `java-version` | `17` | Java version |
+| `skip-tests` | `false` | Skip tests |
+| `create-tag` | `true` | Create and push a Git tag |
+| `tag-prefix` | `v` | Tag prefix (e.g., `v` produces `v0.1.0`) |
+
+## Secrets Configuration
+
+### Organization-Level Secrets (Already Configured)
+
+These secrets are set at the GitHub organization level. Your repository needs to be granted access to them (ask an org admin if they aren't available):
+
+| Secret | Description |
+|--------|-------------|
+| `MAVEN_USERNAME` | Sonatype Central Portal username |
+| `MAVEN_PASSWORD` | Sonatype Central Portal token |
+| `GPG_SECRET_KEY` | ASCII-armored GPG private key |
+| `GPG_PASSPHRASE` | GPG key passphrase |
+
+### Repository-Level Secrets
+
+If your project uses CLI tools for integration tests, set these at the **repository** level (Settings → Secrets and variables → Actions):
+
+| Secret | Description | Required By |
+|--------|-------------|-------------|
+| `ANTHROPIC_API_KEY` | Anthropic API key for Claude CLI | Projects using Claude CLI |
+| `GEMINI_API_KEY` | Google API key for Gemini CLI | Projects using Gemini CLI |
+
+<Note>
+Repository-level secrets keep API keys scoped per-project for billing and access control. Do not set API keys at the organization level.
+</Note>
+
+## POM Requirements
+
+The release workflow deploys with `-Prelease`, which activates a Maven profile that handles Central Publishing, GPG signing, and source/javadoc JAR generation.
+
+<Tabs>
+  <Tab title="Using community-parent (recommended)">
+    If your project inherits from `community-parent`, the `release` profile is already provided. Just add the parent to your POM:
+
+    ```xml
+    <parent>
+      <groupId>org.springaicommunity</groupId>
+      <artifactId>community-parent</artifactId>
+      <version>0.1.0-SNAPSHOT</version>
+      <relativePath/>
+    </parent>
+    ```
+
+    This gives you the full release profile automatically — `central-publishing-maven-plugin`, `maven-gpg-plugin`, `maven-source-plugin`, and `maven-javadoc-plugin` are all preconfigured.
+  </Tab>
+  <Tab title="Without community-parent">
+    If your project does not use `community-parent`, add a `release` profile to your root `pom.xml` manually:
+
+    ```xml
+    <profiles>
+      <profile>
+        <id>release</id>
+        <build>
+          <plugins>
+            <plugin>
+              <groupId>org.sonatype.central</groupId>
+              <artifactId>central-publishing-maven-plugin</artifactId>
+              <version>0.9.0</version>
+              <extensions>true</extensions>
+              <configuration>
+                <publishingServerId>central</publishingServerId>
+                <autoPublish>true</autoPublish>
+              </configuration>
+            </plugin>
+            <plugin>
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-gpg-plugin</artifactId>
+              <version>3.2.7</version>
+              <executions>
+                <execution>
+                  <id>sign-artifacts</id>
+                  <phase>verify</phase>
+                  <goals>
+                    <goal>sign</goal>
+                  </goals>
+                  <configuration>
+                    <gpgArguments>
+                      <arg>--pinentry-mode</arg>
+                      <arg>loopback</arg>
+                    </gpgArguments>
+                  </configuration>
+                </execution>
+              </executions>
+            </plugin>
+          </plugins>
+        </build>
+      </profile>
+    </profiles>
+    ```
+
+    You must also include `maven-source-plugin` and `maven-javadoc-plugin` in the release profile — Maven Central requires source and javadoc JARs.
+  </Tab>
+</Tabs>
+
+## Performing a Release
+
+### Option A: GitHub Actions UI (workflow_dispatch)
+
+This is the primary release method:
+
+<Steps>
+  <Step title="Navigate to Actions">
+    Go to your repository on GitHub and click the **Actions** tab.
+  </Step>
+  <Step title="Select the Release workflow">
+    In the left sidebar, click **Release**.
+  </Step>
+  <Step title="Run workflow">
+    Click **Run workflow**, enter the release version (e.g., `0.1.0`), and click **Run workflow**.
+  </Step>
+  <Step title="Monitor the run">
+    Watch the workflow run. It will set the version, build, deploy to Maven Central, create a Git tag, and publish a GitHub Release.
+  </Step>
+</Steps>
+
+### Option B: Release Script (CLI)
+
+For command-line releases, use the release script from the `community-workflows` repository:
+
+```bash
+# Dry run first
+python3 spring-ai-community-release.py my-project 0.1.0 --dry-run
+
+# Actual release
+python3 spring-ai-community-release.py my-project 0.1.0
+```
+
+The script performs a fresh checkout, sets the version, builds, tags, pushes, and optionally triggers the GitHub Actions release workflow.
+
+### Option C: PR-Based Releases (Optional)
+
+For projects that prefer PR-driven releases, copy `.github/project.yml.template` from `community-workflows` to `.github/project.yml` in your repository:
+
+```yaml
+name: my-project
+
+release:
+  current-version: "0.1.0-SNAPSHOT"
+  next-version: "0.2.0-SNAPSHOT"
+
+integration:
+  uses-reusable-workflows: true
+  pr-based-releases: false  # Set to true to enable
+  java-version: "17"
+```
+
+When `pr-based-releases` is set to `true`, merging a PR that changes `release.current-version` to a non-SNAPSHOT version (e.g., `0.1.0`) automatically triggers the release workflow.
+
+## Projects Using Shared Workflows
+
+| Project | Description | Workflow Type |
+|---------|-------------|---------------|
+| [agent-sandbox](https://github.com/spring-ai-community/agent-sandbox) | Sandbox for secure code execution | Simple |
+| [agent-judge](https://github.com/spring-ai-community/agent-judge) | Judge framework for evaluating AI outputs | Simple |
+| [agent-client](https://github.com/spring-ai-community/spring-ai-agents) | Agent client for Spring AI | With CLI |
+| [claude-agent-sdk-java](https://github.com/spring-ai-community/claude-agent-sdk-java) | Claude Code SDK for Java | With CLI |
+
+## CLI Tools Variant
+
+Projects that require CLI tools (Claude, Gemini, Vendir) for integration tests should use the `-with-cli` workflow variants. These add:
+
+- Node.js setup and CLI installation
+- API keys passed as environment variables to Maven
+- Optional commit message validation (blocks AI attribution markers)
+
+Example CI with CLI tools:
+
+```yaml
+name: CI Build
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    uses: spring-ai-community/community-workflows/.github/workflows/ci-build-with-cli.yml@main
+    with:
+      install-claude-cli: true
+      install-gemini-cli: true
+      install-vendir-cli: true
+      validate-commits: true
+    secrets:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+```
+
+The `-with-cli` variants are available for all three workflows: `ci-build-with-cli.yml`, `publish-snapshot-with-cli.yml`, and `maven-central-release-with-cli.yml`.
+
+Additional inputs for CLI variants:
+
+| Input | Default | Description |
+|-------|---------|-------------|
+| `install-claude-cli` | `false` | Install Claude Code CLI |
+| `install-gemini-cli` | `false` | Install Gemini CLI |
+| `install-vendir-cli` | `false` | Install Vendir CLI |
+| `vendir-version` | `0.44.0` | Vendir version to install |
+| `validate-commits` | `false` | Check commits for AI attribution markers |
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Secrets not available in workflow">
+    Organization-level secrets must be explicitly granted access to your repository. Ask an org admin to add your repository to the secret's access list under **Organization Settings → Secrets → Repository access**.
+  </Accordion>
+
+  <Accordion title="SNAPSHOT references found during release">
+    The release workflow checks that no POM files contain SNAPSHOT references after setting the release version. If you have SNAPSHOT dependencies on other community projects, those projects must be released first.
+  </Accordion>
+
+  <Accordion title="GPG signing fails">
+    Ensure the `GPG_SECRET_KEY` secret contains the full ASCII-armored private key. Export it with:
+    ```bash
+    gpg --armor --export-secret-keys KEY_ID > private-key.asc
+    ```
+    The entire contents of `private-key.asc` (including the `BEGIN` and `END` lines) should be the secret value.
+  </Accordion>
+
+  <Accordion title="Maven Central deployment fails">
+    Verify your credentials work by logging in at [central.sonatype.com](https://central.sonatype.com). Try publishing a SNAPSHOT first to confirm the credentials are valid.
+  </Accordion>
+
+  <Accordion title="CLI tools not found during build">
+    Ensure you're using the `-with-cli` workflow variant and have set the `install-*` inputs to `true`. Check that the corresponding API key secrets are configured at the repository level.
+  </Accordion>
+</AccordionGroup>
