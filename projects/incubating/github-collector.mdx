@@ -1,0 +1,272 @@
+---
+title: "GitHub Collector"
+description: "Collect GitHub issues, PRs, and releases for research and analysis"
+---
+
+<img src="https://img.shields.io/badge/Status-Incubating-blue" />
+
+[GitHub](https://github.com/spring-ai-community/github-collector)
+
+## Overview
+
+GitHub Collector is a command-line tool for collecting GitHub repository data — issues, pull requests, releases, and collaborators. It outputs structured JSON files suitable for analysis in Python, R, or any data processing tool.
+
+Designed for researchers who need to mine software repositories without dealing with GitHub API pagination, rate limits, or JSON parsing.
+
+## Quick Start
+
+No Java installation required. JBang handles everything.
+
+### 1. Install JBang
+
+<Tabs>
+  <Tab title="SDKMAN (Linux/macOS)">
+```bash
+curl -s "https://get.sdkman.io" | bash
+source "$HOME/.sdkman/bin/sdkman-init.sh"
+sdk install jbang
+```
+  </Tab>
+  <Tab title="Homebrew (macOS)">
+```bash
+brew install jbang
+```
+  </Tab>
+  <Tab title="Windows">
+```powershell
+iex "& { $(iwr -useb https://ps.jbang.dev) } app setup"
+```
+  </Tab>
+  <Tab title="Direct Install">
+```bash
+curl -Ls https://sh.jbang.dev | bash -s - app setup
+```
+  </Tab>
+</Tabs>
+
+### 2. Set your GitHub token
+
+Create a [personal access token](https://github.com/settings/tokens) with `repo` scope.
+
+```bash
+export GITHUB_TOKEN=ghp_your_token_here
+```
+
+### 3. Collect data
+
+```bash
+jbang collect@spring-ai-community/github-collector --repo spring-projects/spring-ai --type issues
+```
+
+Output appears in `issues/raw/open/spring-projects/spring-ai/`:
+
+```
+batch_001_issues.json
+batch_002_issues.json
+...
+```
+
+## Common Use Cases
+
+### Collect all closed issues
+
+```bash
+jbang collect@spring-ai-community/github-collector \
+  --repo owner/repo \
+  --type issues \
+  --state closed
+```
+
+### Collect merged PRs
+
+```bash
+jbang collect@spring-ai-community/github-collector \
+  --repo owner/repo \
+  --type prs \
+  --pr-state merged
+```
+
+### Collect issues from a date range
+
+```bash
+jbang collect@spring-ai-community/github-collector \
+  --repo owner/repo \
+  --type issues \
+  --state all \
+  --created-after 2024-01-01 \
+  --created-before 2025-01-01
+```
+
+### Collect releases
+
+```bash
+jbang collect@spring-ai-community/github-collector \
+  --repo owner/repo \
+  --type releases
+```
+
+### Collect repository collaborators
+
+```bash
+jbang collect@spring-ai-community/github-collector \
+  --repo owner/repo \
+  --type collaborators
+```
+
+### Verify and deduplicate batch files
+
+If you collected data in multiple runs, duplicates may exist across batches:
+
+```bash
+# Check for problems
+jbang collect@spring-ai-community/github-collector \
+  --type issues \
+  --verify \
+  --verify-dir path/to/batch/files
+
+# Fix duplicates automatically
+jbang collect@spring-ai-community/github-collector \
+  --type issues \
+  --deduplicate \
+  --verify-dir path/to/batch/files
+```
+
+## Output Format
+
+Each batch file contains a metadata header and an array of items:
+
+```json
+{
+  "metadata": {
+    "batch_index": 1,
+    "item_count": 100,
+    "collection_type": "issues",
+    "repository": "owner/repo",
+    "state": "open",
+    "timestamp": "2026-02-04T15:30:45"
+  },
+  "issues": [
+    {
+      "number": 123,
+      "title": "Bug in feature X",
+      "body": "Description...",
+      "state": "OPEN",
+      "created_at": "2025-06-15T10:30:00",
+      "updated_at": "2025-06-16T14:22:00",
+      "closed_at": null,
+      "url": "https://github.com/owner/repo/issues/123",
+      "author": { "login": "username" },
+      "labels": [
+        { "name": "bug", "color": "d73a4a" }
+      ],
+      "assignees": [],
+      "comments_count": 5,
+      "label_events": [
+        {
+          "event": "labeled",
+          "label": "bug",
+          "actor": "maintainer",
+          "created_at": "2025-06-15T11:00:00"
+        }
+      ]
+    }
+  ]
+}
+```
+
+### Loading in Python
+
+```python
+import json
+from pathlib import Path
+
+def load_batches(directory):
+    """Load all batch files from a directory."""
+    items = []
+    for batch_file in sorted(Path(directory).glob("batch_*.json")):
+        with open(batch_file) as f:
+            data = json.load(f)
+            # Get the collection type (issues, prs, releases, etc.)
+            for key in data:
+                if key != "metadata" and isinstance(data[key], list):
+                    items.extend(data[key])
+    return items
+
+issues = load_batches("issues/raw/closed/spring-projects/spring-ai")
+print(f"Loaded {len(issues)} issues")
+```
+
+## CLI Reference
+
+```
+Usage: jbang collect@spring-ai-community/github-collector [OPTIONS]
+
+REQUIRED:
+    -r, --repo REPO         Repository in format owner/repo
+
+COLLECTION TYPE:
+    -t, --type TYPE         issues, prs, releases, collaborators (default: issues)
+    -s, --state STATE       Issue state: open, closed, all (default: open)
+    --pr-state STATE        PR state: open, closed, merged, all (default: open)
+
+DATE FILTERING:
+    --created-after DATE    Items created on or after DATE (YYYY-MM-DD)
+    --created-before DATE   Items created before DATE (YYYY-MM-DD)
+
+OUTPUT:
+    -b, --batch-size SIZE   Items per batch file (default: 100)
+    --single-file           Output all items to one file instead of batches
+    -o, --output FILE       Output file path (with --single-file)
+
+VERIFICATION:
+    --verify                Check batch files for duplicates and issues
+    --deduplicate           Remove duplicates from batch files
+    --verify-dir DIR        Directory containing batch files to verify
+
+OTHER:
+    -d, --dry-run           Show what would be collected without doing it
+    -v, --verbose           Enable verbose logging
+    -h, --help              Show help message
+```
+
+## Rate Limits
+
+GitHub API allows 5,000 requests per hour for authenticated users. The collector handles rate limiting automatically — it will pause and resume when limits reset.
+
+For large repositories (10,000+ issues), consider:
+
+- Using date ranges to split collection across multiple runs
+- Running overnight when you won't need the token for other work
+
+## Troubleshooting
+
+### "GITHUB_TOKEN environment variable is required"
+
+Set your token:
+
+```bash
+export GITHUB_TOKEN=ghp_your_token_here
+```
+
+### "API rate limit exceeded"
+
+The collector waits automatically. For immediate needs, check your [rate limit status](https://api.github.com/rate_limit) (requires authentication).
+
+### JBang not found after install
+
+Restart your terminal or run:
+
+```bash
+source ~/.bashrc  # or ~/.zshrc
+```
+
+### Duplicates in collected data
+
+Run verification and deduplication:
+
+```bash
+jbang collect@spring-ai-community/github-collector \
+  --type issues \
+  --deduplicate \
+  --verify-dir path/to/your/data
+```

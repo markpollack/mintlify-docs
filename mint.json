@@ -129,6 +129,7 @@
         "projects/incubating/agent-sandbox",
         "projects/incubating/spring-ai-agent-utils",
         "projects/incubating/agent-client",
+        "projects/incubating/github-collector",
         "projects/incubating/spring-ai-bedrock-agentcore",
         "projects/incubating/spring-ai-bench",
         "projects/incubating/spring-ai-playground",
