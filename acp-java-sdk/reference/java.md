@@ -125,7 +125,10 @@ AcpSyncClient client = AcpClient.sync(transport)
 
 ### Example — Complete client lifecycle
 
+This launches Gemini CLI as an ACP agent subprocess and sends it a prompt. `AgentParameters` builds the command line; `StdioAcpClientTransport` spawns the process and handles JSON-RPC framing over stdin/stdout.
+
 ```java
+// Launch "gemini --experimental-acp" as a subprocess
 var params = AgentParameters.builder("gemini")
     .arg("--experimental-acp")
     .build();
@@ -505,9 +508,9 @@ context.writeFile("output.txt", "content");
 
 ### Stdio Transport
 
-Default for CLI-launched agents. Used by Zed, JetBrains, and VS Code.
+The default transport. The client launches the agent as a subprocess and communicates via JSON-RPC over stdin/stdout. This is the same mechanism Zed, JetBrains, and VS Code use to talk to agents.
 
-**Client:**
+**Client side** — `AgentParameters` specifies the command to launch. Any executable that speaks ACP over stdin/stdout works (Gemini CLI, your own agent JAR, etc.):
 ```java
 var params = AgentParameters.builder("gemini")
     .arg("--experimental-acp")
@@ -515,7 +518,7 @@ var params = AgentParameters.builder("gemini")
 var transport = new StdioAcpClientTransport(params);
 ```
 
-**Agent:**
+**Agent side** — reads JSON-RPC from stdin, writes responses to stdout. The agent doesn't need to know what launched it:
 ```java
 var transport = new StdioAcpAgentTransport();
 ```

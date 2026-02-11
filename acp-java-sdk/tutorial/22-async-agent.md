@@ -76,7 +76,7 @@ return context.sendMessage("text")
 
 - **No API key** — the async agent runs entirely locally, same as Module 12
 - **Same protocol** — sync and async agents are interchangeable from the client's perspective
-- **Reactive integration** — async agents work naturally with Spring WebFlux, R2DBC, and other reactive libraries
+- **Reactive integration** — async agents work naturally with Project Reactor, R2DBC, and other reactive libraries
 
 ## Previous Module
 

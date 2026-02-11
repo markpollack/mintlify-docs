@@ -50,7 +50,7 @@ client.initialize()
 | Update consumer | `void` | `Mono<Void>` |
 | Blocking | Yes | No (unless you call `block()`) |
 
-The async client wraps every operation in Project Reactor's `Mono`. If you're already using a reactive framework like Spring WebFlux, the async client integrates naturally. For CLI tools and scripts, the sync client is simpler.
+The async client wraps every operation in Project Reactor's `Mono`. If you're already using a reactive framework, the async client integrates naturally. For CLI tools and scripts, the sync client is simpler.
 
 ## Alternative: block()
 

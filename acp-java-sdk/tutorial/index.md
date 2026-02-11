@@ -10,8 +10,8 @@ A progressive, hands-on tutorial. Each module focuses on one concept and include
 
 - Java 21 or later
 - Maven 3.8+ (or use the included `./mvnw` wrapper)
-- For client modules: Gemini CLI with ACP support and `GEMINI_API_KEY`
-- For agent modules: no external dependencies (runs locally)
+- For client modules (01-11, 21): [Gemini CLI](https://github.com/google-gemini/gemini-cli) with `--experimental-acp` flag, and a `GEMINI_API_KEY`. The tutorial uses Gemini as a real ACP agent to talk to — the SDK launches it as a subprocess and communicates over stdin/stdout.
+- For agent modules (12-19, 22): no external dependencies. You build the agent and the tutorial provides a test client that launches it.
 
 ## Tutorial Structure
 
