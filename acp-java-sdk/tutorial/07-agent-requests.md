@@ -8,7 +8,13 @@ Handle file read/write requests from agents on the client side.
 - Advertising file system capabilities via `ClientCapabilities`
 - The inverted request flow: agents request, clients serve
 
+## Inverted Request Flow
+
+In ACP, the request direction is inverted for file operations compared to traditional client-server: the **agent** requests files from the **client**. This allows agents to access the user's local filesystem through a controlled interface — the client decides which files to expose and how to handle writes.
+
 ## The Code
+
+To enable this, the client registers file handlers on its builder and advertises file system capabilities during initialize. When the agent calls `context.readFile()` or `context.writeFile()`, these handlers are invoked:
 
 ```java
 AcpSyncClient client = AcpClient.sync(transport)
@@ -33,14 +39,6 @@ client.initialize(new InitializeRequest(1,
         false  // terminalExecution
     )));
 ```
-
-## Inverted Request Flow
-
-In ACP, the roles are inverted compared to traditional client-server:
-- The **agent** requests files from the **client**
-- The **client** serves files to the **agent**
-
-This allows agents to access the user's local filesystem through a controlled interface. The client decides which files to expose and how to handle writes.
 
 <Warning>
 Throw exceptions from handlers for errors. The SDK converts exceptions to JSON-RPC error responses. Do not return error strings as content.

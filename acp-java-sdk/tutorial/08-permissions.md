@@ -10,6 +10,8 @@ Handle permission requests from agents on the client side.
 
 ## The Code
 
+When an agent wants to perform a sensitive operation (like writing a file or running a command), it can ask the client for permission first. The client registers a `requestPermissionHandler` that receives the request details and a list of options (allow once, allow always, reject). Your handler decides which option to select — typically by showing a dialog to the user:
+
 ```java
 AcpSyncClient client = AcpClient.sync(transport)
     .requestPermissionHandler(req -> {

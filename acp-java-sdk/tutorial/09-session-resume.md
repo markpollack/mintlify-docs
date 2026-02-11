@@ -8,7 +8,13 @@ Load and resume existing sessions.
 - `LoadSessionRequest` and `LoadSessionResponse` structure
 - Session state persistence across load operations
 
+## How It Works
+
+`loadSession()` tells the agent to resume a previously created session. The agent looks up its stored state for that session ID and restores the conversation context. Whether state actually persists depends on the agent implementation — the demo includes a `StatefulAgent` that stores session history in a `ConcurrentHashMap`.
+
 ## The Code
+
+This example creates a session, sends messages to build history, then loads the same session by ID. After loading, the agent has access to the previous conversation context:
 
 ```java
 // Create a session and send some messages
@@ -23,13 +29,8 @@ var loadResponse = client.loadSession(
 // Continue the conversation with context preserved
 client.prompt(new PromptRequest(session.sessionId(),
     List.of(new TextContent("What is my favorite color?"))));
+// The agent remembers the previous conversation
 ```
-
-## How It Works
-
-`loadSession()` tells the agent to resume a previously created session. The agent looks up its stored state for that session ID and restores the conversation context.
-
-Whether state actually persists depends on the agent implementation. The demo includes a `StatefulAgent` that stores session state in a `ConcurrentHashMap`.
 
 ## Source Code
 

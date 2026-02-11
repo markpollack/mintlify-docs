@@ -404,6 +404,74 @@ The async context's `sendMessage()`, `sendUpdate()`, etc. return `Mono<Void>`, c
 
 ---
 
+## Convenience Methods vs Full API
+
+The SDK provides convenience methods that cover the most common operations. Use these by default — they produce cleaner code and handle the protocol details for you.
+
+### When convenience methods are enough (~80% of cases)
+
+```java
+// Response factories
+InitializeResponse.ok()                        // default capabilities
+InitializeResponse.ok(customCapabilities)      // custom capabilities
+PromptResponse.endTurn()                       // stop reason END_TURN
+PromptResponse.text("response")                // message + endTurn in one call
+
+// Sending updates (on SyncPromptContext or async equivalent)
+context.sendMessage("Hello");                  // AgentMessageChunk with TextContent
+context.sendThought("Analyzing...");           // AgentThoughtChunk with TextContent
+
+// File operations
+String content = context.readFile("pom.xml");  // read with defaults
+context.writeFile("output.txt", "content");    // write file
+
+// Terminal
+CommandResult result = context.execute("ls", "-la");
+
+// Permissions
+boolean ok = context.askPermission("Delete temp files?");
+String choice = context.askChoice("Format?", "JSON", "XML", "YAML");
+```
+
+### When to use the full API (~20% of cases)
+
+Drop to the full API when you need control that convenience methods don't expose:
+
+```java
+// Custom AgentCapabilities with specific MCP and prompt settings
+var caps = new AgentCapabilities(
+    true,                                          // loadSession
+    new McpCapabilities(true, true),               // HTTP + SSE
+    new PromptCapabilities(true, false, true)       // imageContent, audioContent, embeddedContext
+);
+return InitializeResponse.ok(caps);
+
+// Send non-text update types (Plan, ToolCall, AvailableCommandsUpdate, etc.)
+context.sendUpdate(sessionId, new Plan("plan", List.of(
+    new PlanStep("Analyze code", PlanStepStatus.IN_PROGRESS),
+    new PlanStep("Generate tests", PlanStepStatus.PENDING)
+)));
+
+context.sendUpdate(sessionId, new ToolCall("tool_call",
+    "search", "code-search", ToolCallStatus.IN_PROGRESS, null));
+
+// Read file with offset and line limit
+var response = context.readTextFile(
+    new ReadTextFileRequest(sessionId, "large-file.txt", 100, 50));
+
+// Request permission with custom options
+var permResponse = context.requestPermission(new RequestPermissionRequest(
+    sessionId, "Run deployment script?", List.of(
+        new PermissionOption("allow-once", "Allow once", PermissionOptionKind.ALLOW_ONCE),
+        new PermissionOption("always", "Always allow", PermissionOptionKind.ALLOW_ALWAYS),
+        new PermissionOption("reject", "Reject", PermissionOptionKind.REJECT_ONCE)
+    )));
+```
+
+The convenience methods are wrappers around the full API — they call the same underlying protocol methods. You can mix and match freely within a single handler.
+
+---
+
 ## Protocol Types
 
 All protocol types are defined in `AcpSchema` as Java records.

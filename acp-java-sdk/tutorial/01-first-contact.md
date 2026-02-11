@@ -21,7 +21,7 @@ Your first ACP client — launch an agent as a subprocess and send it a prompt.
    export GEMINI_API_KEY=your-key-here
    ```
 
-3. **Java 21 or later**
+3. **Java 17 or later**
 
 ## The Code
 

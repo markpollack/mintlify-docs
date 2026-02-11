@@ -10,6 +10,8 @@ Implement all handler types that an ACP agent can provide.
 
 ## The Code
 
+An ACP agent has five handler types. Three are required (`initialize`, `newSession`, `prompt`) and two are optional (`loadSession`, `cancel`). This example shows all five wired up with the sync builder API. Note that `stdout` is reserved for the JSON-RPC protocol — agent logging goes to `stderr`:
+
 ```java
 import com.agentclientprotocol.sdk.agent.*;
 import com.agentclientprotocol.sdk.agent.transport.*;

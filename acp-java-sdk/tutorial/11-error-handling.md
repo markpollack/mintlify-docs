@@ -11,6 +11,8 @@ Handle protocol errors from agents on the client side.
 
 ## The Code
 
+ACP uses structured errors based on JSON-RPC error codes. On the **client side**, protocol errors arrive as `AcpClientSession.AcpError` exceptions. You can inspect the error code to determine what went wrong:
+
 ```java
 // Client: catch protocol errors
 try {
@@ -19,8 +21,12 @@ try {
 } catch (AcpClientSession.AcpError e) {
     System.out.println("Code: " + e.getCode());
     System.out.println("Message: " + e.getMessage());
+    // Output: Code: -32602
+    //         Message: Invalid parameter in prompt: 'this is invalid input'
 }
 ```
+
+On the **agent side**, throw `AcpProtocolException` with a standard error code. The SDK converts it to a JSON-RPC error response:
 
 ```java
 // Agent: throw protocol errors

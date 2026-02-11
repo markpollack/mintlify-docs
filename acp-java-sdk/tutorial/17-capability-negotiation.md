@@ -42,7 +42,7 @@ System.out.println("mcpSse: " + agentCaps.supportsMcpSse());
         new PromptCapabilities(false, false, true) // embeddedContext only
     );
 
-    return new InitializeResponse(1, agentCaps, List.of());
+    return InitializeResponse.ok(agentCaps);
 })
 
 .promptHandler((req, context) -> {

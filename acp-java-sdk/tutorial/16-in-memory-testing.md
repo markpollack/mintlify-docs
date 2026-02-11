@@ -10,6 +10,8 @@ Test client-agent communication without subprocesses or I/O.
 
 ## The Code
 
+`InMemoryTransportPair` from the `acp-test` module creates a pair of connected transports — one for the client, one for the agent. Messages pass through in-memory buffers instead of subprocess stdin/stdout. This makes tests fast, deterministic, and free of external dependencies. The pattern below wires up an agent and client in the same JVM, sends a prompt, and verifies the round-trip:
+
 ```java
 import com.agentclientprotocol.sdk.test.InMemoryTransportPair;
 import com.agentclientprotocol.sdk.agent.*;
@@ -107,4 +109,4 @@ Messages pass through in-memory buffers. No subprocess launching, no stdin/stdou
 
 ## Next Module
 
-[Module 28: Zed Integration](/acp-java-sdk/tutorial/28-zed-integration) — run your agent inside the Zed editor.
+[Module 17: Capability Negotiation](/acp-java-sdk/tutorial/17-capability-negotiation) — advertise and check capabilities between client and agent.

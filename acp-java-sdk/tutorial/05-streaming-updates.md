@@ -5,7 +5,7 @@ Receive real-time updates from an agent while it processes your prompt.
 ## What You'll Learn
 
 - Registering a `sessionUpdateConsumer` on the client
-- Pattern matching on `SessionUpdate` types
+- Dispatching on `SessionUpdate` types with `instanceof`
 - Handling message chunks, thoughts, tool calls, and plans
 
 ## The Code
@@ -20,37 +20,28 @@ AcpSyncClient client = AcpClient.sync(transport)
     .build();
 ```
 
-The handler uses pattern matching on the sealed `SessionUpdate` interface:
+The handler uses `instanceof` to dispatch on the `SessionUpdate` type:
 
 ```java
 private static void handleSessionUpdate(SessionUpdate update) {
-    switch (update) {
-        case AgentMessageChunk msg ->
-            System.out.print(((TextContent) msg.content()).text());
-
-        case AgentThoughtChunk thought ->
-            System.out.println("[Thought] " +
-                ((TextContent) thought.content()).text());
-
-        case ToolCall tool ->
-            System.out.println("[Tool] " + tool.title() +
-                " (" + tool.status() + ")");
-
-        case ToolCallUpdateNotification toolUpdate ->
-            System.out.println("[Tool Update] " + toolUpdate.title() +
-                " -> " + toolUpdate.status());
-
-        case Plan plan ->
-            System.out.println("[Plan] " + plan.entries().size() + " steps");
-
-        case AvailableCommandsUpdate commands ->
-            System.out.println("[Commands] " + commands.commands().size() +
-                " available");
-
-        case CurrentModeUpdate mode ->
-            System.out.println("[Mode] " + mode.mode());
-
-        default -> {}
+    if (update instanceof AgentMessageChunk msg) {
+        System.out.print(((TextContent) msg.content()).text());
+    } else if (update instanceof AgentThoughtChunk thought) {
+        System.out.println("[Thought] " +
+            ((TextContent) thought.content()).text());
+    } else if (update instanceof ToolCall tool) {
+        System.out.println("[Tool] " + tool.title() +
+            " (" + tool.status() + ")");
+    } else if (update instanceof ToolCallUpdateNotification toolUpdate) {
+        System.out.println("[Tool Update] " + toolUpdate.title() +
+            " -> " + toolUpdate.status());
+    } else if (update instanceof Plan plan) {
+        System.out.println("[Plan] " + plan.entries().size() + " steps");
+    } else if (update instanceof AvailableCommandsUpdate commands) {
+        System.out.println("[Commands] " + commands.availableCommands().size() +
+            " available");
+    } else if (update instanceof CurrentModeUpdate mode) {
+        System.out.println("[Mode] " + mode.currentModeId());
     }
 }
 ```

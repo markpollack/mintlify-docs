@@ -10,6 +10,8 @@ Deep dive into prompt requests and response handling.
 
 ## The Code
 
+`PromptRequest` takes a session ID (from Module 03) and a list of content items. The response includes a `StopReason` that tells you why the agent stopped generating — check this to know if the response is complete, truncated, or refused:
+
 ```java
 // Send a prompt with text content
 var response = client.prompt(new PromptRequest(
@@ -18,11 +20,12 @@ var response = client.prompt(new PromptRequest(
 ));
 
 System.out.println("Stop reason: " + response.stopReason());
+// Output: Stop reason: END_TURN
 ```
 
 ## Stop Reasons
 
-The `PromptResponse` includes a `StopReason` that tells you why the agent finished:
+The `StopReason` tells you why the agent finished:
 
 | StopReason | Description |
 |------------|-------------|

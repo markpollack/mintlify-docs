@@ -46,7 +46,7 @@ var session2 = client.newSession(new NewSessionRequest(cwd, List.of(
     var mcpCaps = new McpCapabilities(true, true); // HTTP and SSE
     var agentCaps = new AgentCapabilities(
         true, mcpCaps, new PromptCapabilities());
-    return new InitializeResponse(1, agentCaps, List.of());
+    return InitializeResponse.ok(agentCaps);
 })
 
 .newSessionHandler(req -> {

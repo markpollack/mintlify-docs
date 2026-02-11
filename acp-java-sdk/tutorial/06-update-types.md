@@ -5,41 +5,38 @@ Comprehensive coverage of all `SessionUpdate` types in ACP.
 ## What You'll Learn
 
 - All seven `SessionUpdate` types and when they appear
-- Pattern matching with Java's `switch` on sealed interfaces
+- Dispatching on update types with `instanceof`
 - Building rich UIs that show agent activity
 
 ## The Code
 
-The client registers a `sessionUpdateConsumer` and uses pattern matching to handle each type:
+The client registers a `sessionUpdateConsumer` and uses `instanceof` to handle each type:
 
 ```java
 AcpSyncClient client = AcpClient.sync(transport)
     .sessionUpdateConsumer(notification -> {
         SessionUpdate update = notification.update();
-        switch (update) {
-            case AgentMessageChunk msg ->
-                System.out.print(((TextContent) msg.content()).text());
-            case AgentThoughtChunk thought ->
-                System.out.println("[Thought] " +
-                    ((TextContent) thought.content()).text());
-            case ToolCall tc ->
-                System.out.println("[Tool] " + tc.title() +
-                    " | " + tc.kind() + " | " + tc.status());
-            case ToolCallUpdateNotification tcUpdate ->
-                System.out.println("[ToolUpdate] " +
-                    tcUpdate.toolCallId() + " -> " + tcUpdate.status());
-            case Plan plan -> {
-                System.out.println("[Plan] " + plan.entries().size() + " entries:");
-                plan.entries().forEach(entry ->
-                    System.out.println("  - " + entry.content() +
-                        " [" + entry.status() + "]"));
-            }
-            case AvailableCommandsUpdate commands ->
-                System.out.println("[Commands] " +
-                    commands.availableCommands().size() + " available");
-            case CurrentModeUpdate mode ->
-                System.out.println("[Mode] " + mode.currentModeId());
-            default -> {}
+        if (update instanceof AgentMessageChunk msg) {
+            System.out.print(((TextContent) msg.content()).text());
+        } else if (update instanceof AgentThoughtChunk thought) {
+            System.out.println("[Thought] " +
+                ((TextContent) thought.content()).text());
+        } else if (update instanceof ToolCall tc) {
+            System.out.println("[Tool] " + tc.title() +
+                " | " + tc.kind() + " | " + tc.status());
+        } else if (update instanceof ToolCallUpdateNotification tcUpdate) {
+            System.out.println("[ToolUpdate] " +
+                tcUpdate.toolCallId() + " -> " + tcUpdate.status());
+        } else if (update instanceof Plan plan) {
+            System.out.println("[Plan] " + plan.entries().size() + " entries:");
+            plan.entries().forEach(entry ->
+                System.out.println("  - " + entry.content() +
+                    " [" + entry.status() + "]"));
+        } else if (update instanceof AvailableCommandsUpdate commands) {
+            System.out.println("[Commands] " +
+                commands.availableCommands().size() + " available");
+        } else if (update instanceof CurrentModeUpdate mode) {
+            System.out.println("[Mode] " + mode.currentModeId());
         }
     })
     .build();

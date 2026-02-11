@@ -8,7 +8,17 @@ Deep dive into the ACP initialize handshake and version negotiation.
 - Protocol version negotiation semantics
 - Client and agent capability exchange
 
+## How It Works
+
+The initialize handshake is the first message exchange in ACP — it must complete before any session or prompt operations. Both sides exchange:
+
+1. **Protocol version** — they agree on a compatible version
+2. **Client capabilities** — what the client can provide (file system access, terminal execution)
+3. **Agent capabilities** — what the agent supports (session loading, image content, MCP)
+
 ## The Code
+
+Module 01 called `client.initialize()` with defaults. Here we use the explicit form to control exactly what capabilities we advertise. The `InitializeResponse` tells us what the agent supports:
 
 ```java
 // Initialize with explicit protocol version and capabilities
@@ -21,17 +31,10 @@ var initResponse = client.initialize(
 System.out.println("Protocol version: " + initResponse.protocolVersion());
 System.out.println("Agent capabilities: " + initResponse.agentCapabilities());
 System.out.println("Existing sessions: " + initResponse.sessionIds().size());
+// Output: Protocol version: 1
+//         Agent capabilities: AgentCapabilities[...]
+//         Existing sessions: 0
 ```
-
-## How It Works
-
-The initialize handshake is the first message exchange in ACP. It establishes:
-
-1. **Protocol version** — both sides agree on a compatible version
-2. **Client capabilities** — what the client can provide (file system, terminal)
-3. **Agent capabilities** — what the agent supports (load session, image content)
-
-The handshake must complete before any session or prompt operations. If versions are incompatible, the connection fails.
 
 ## Source Code
 
