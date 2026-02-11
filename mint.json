@@ -125,6 +125,49 @@
             }
           ]
         },
+        {
+          "group": "ACP Java SDK",
+          "pages": [
+            "acp-java-sdk/index",
+            {
+              "group": "Reference",
+              "pages": [
+                "acp-java-sdk/reference/java"
+              ]
+            },
+            {
+              "group": "Tutorial",
+              "pages": [
+                "acp-java-sdk/tutorial/index",
+                {
+                  "group": "Part 1: Client Basics",
+                  "pages": [
+                    "acp-java-sdk/tutorial/01-first-contact",
+                    "acp-java-sdk/tutorial/05-streaming-updates"
+                  ]
+                },
+                {
+                  "group": "Part 2: Building Agents",
+                  "pages": [
+                    "acp-java-sdk/tutorial/12-echo-agent",
+                    "acp-java-sdk/tutorial/13-agent-handlers",
+                    "acp-java-sdk/tutorial/14-sending-updates",
+                    "acp-java-sdk/tutorial/15-agent-requests",
+                    "acp-java-sdk/tutorial/16-in-memory-testing"
+                  ]
+                },
+                {
+                  "group": "Part 3: IDE Integration",
+                  "pages": [
+                    "acp-java-sdk/tutorial/28-zed-integration",
+                    "acp-java-sdk/tutorial/29-jetbrains-integration",
+                    "acp-java-sdk/tutorial/30-vscode-integration"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
         "projects/incubating/agent-judge",
         "projects/incubating/agent-sandbox",
         "projects/incubating/spring-ai-agent-utils",
