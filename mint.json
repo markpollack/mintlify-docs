@@ -143,7 +143,16 @@
                   "group": "Part 1: Client Basics",
                   "pages": [
                     "acp-java-sdk/tutorial/01-first-contact",
-                    "acp-java-sdk/tutorial/05-streaming-updates"
+                    "acp-java-sdk/tutorial/02-protocol-basics",
+                    "acp-java-sdk/tutorial/03-sessions",
+                    "acp-java-sdk/tutorial/04-prompts",
+                    "acp-java-sdk/tutorial/05-streaming-updates",
+                    "acp-java-sdk/tutorial/06-update-types",
+                    "acp-java-sdk/tutorial/07-agent-requests",
+                    "acp-java-sdk/tutorial/08-permissions",
+                    "acp-java-sdk/tutorial/09-session-resume",
+                    "acp-java-sdk/tutorial/10-cancellation",
+                    "acp-java-sdk/tutorial/11-error-handling"
                   ]
                 },
                 {
@@ -153,11 +162,21 @@
                     "acp-java-sdk/tutorial/13-agent-handlers",
                     "acp-java-sdk/tutorial/14-sending-updates",
                     "acp-java-sdk/tutorial/15-agent-requests",
-                    "acp-java-sdk/tutorial/16-in-memory-testing"
+                    "acp-java-sdk/tutorial/16-in-memory-testing",
+                    "acp-java-sdk/tutorial/17-capability-negotiation",
+                    "acp-java-sdk/tutorial/18-terminal-operations",
+                    "acp-java-sdk/tutorial/19-mcp-servers"
                   ]
                 },
                 {
-                  "group": "Part 3: IDE Integration",
+                  "group": "Part 3: Advanced",
+                  "pages": [
+                    "acp-java-sdk/tutorial/21-async-client",
+                    "acp-java-sdk/tutorial/22-async-agent"
+                  ]
+                },
+                {
+                  "group": "Part 4: IDE Integration",
                   "pages": [
                     "acp-java-sdk/tutorial/28-zed-integration",
                     "acp-java-sdk/tutorial/29-jetbrains-integration",

@@ -17,9 +17,10 @@ A progressive, hands-on tutorial. Each module focuses on one concept and include
 
 | Part | Modules | Topics |
 |------|---------|--------|
-| **1. Client Basics** | 01, 05 | Connect to agents, receive streaming updates |
-| **2. Building Agents** | 12-16 | Echo agent, handlers, updates, requests, testing |
-| **3. IDE Integration** | 28-30 | Zed, JetBrains, VS Code |
+| **1. Client Basics** | 01-11 | Connect, sessions, prompts, streaming, updates, file handlers, permissions, resume, cancel, errors |
+| **2. Building Agents** | 12-19 | Echo agent, handlers, updates, requests, testing, capabilities, terminal, MCP |
+| **3. Advanced** | 21-22 | Async client, async agent (Project Reactor) |
+| **4. IDE Integration** | 28-30 | Zed, JetBrains, VS Code |
 
 ## Getting the Code
 
