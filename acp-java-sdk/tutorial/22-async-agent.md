@@ -24,11 +24,7 @@ AcpAsyncAgent agent = AcpAgent.async(transport)
 
     // Returns Mono<PromptResponse>
     .promptHandler((req, context) -> {
-        String text = req.prompt().stream()
-            .filter(c -> c instanceof TextContent)
-            .map(c -> ((TextContent) c).text())
-            .findFirst()
-            .orElse("(no text)");
+        String text = req.text();
 
         // sendMessage() returns Mono<Void> — must chain with then()
         return context.sendMessage("Async Echo: " + text)

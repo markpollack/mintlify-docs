@@ -34,11 +34,7 @@ AcpSyncAgent agent = AcpAgent.sync(transport)
     })
 
     .promptHandler((req, context) -> {
-        String promptText = req.prompt().stream()
-            .filter(c -> c instanceof TextContent)
-            .map(c -> ((TextContent) c).text())
-            .findFirst()
-            .orElse("");
+        String promptText = req.text();
 
         context.sendThought("Processing your request...");
 

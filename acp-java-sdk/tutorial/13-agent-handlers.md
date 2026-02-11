@@ -42,13 +42,7 @@ AcpSyncAgent agent = AcpAgent.sync(transport)
     })
 
     .promptHandler((req, context) -> {
-        String text = req.prompt().stream()
-            .filter(c -> c instanceof TextContent)
-            .map(c -> ((TextContent) c).text())
-            .findFirst()
-            .orElse("");
-
-        context.sendMessage("Received: " + text);
+        context.sendMessage("Received: " + req.text());
         return PromptResponse.endTurn();
     })
 

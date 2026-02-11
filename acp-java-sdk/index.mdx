@@ -206,11 +206,7 @@ class EchoAgent {
 
     @Prompt
     PromptResponse prompt(PromptRequest req, SyncPromptContext ctx) {
-        String text = req.prompt().stream()
-            .filter(c -> c instanceof TextContent)
-            .map(c -> ((TextContent) c).text())
-            .findFirst().orElse("");
-        ctx.sendMessage("Echo: " + text);
+        ctx.sendMessage("Echo: " + req.text());
         return PromptResponse.endTurn();
     }
 }
@@ -231,7 +227,7 @@ Run this yourself: [Module 12: Echo Agent](https://github.com/markpollack/acp-ja
 <dependency>
     <groupId>com.agentclientprotocol</groupId>
     <artifactId>acp-core</artifactId>
-    <version>0.9.0</version>
+    <version>0.9.0-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -241,7 +237,7 @@ For annotation-based agents (as shown above), add `acp-agent-support` instead â€
 <dependency>
     <groupId>com.agentclientprotocol</groupId>
     <artifactId>acp-agent-support</artifactId>
-    <version>0.9.0</version>
+    <version>0.9.0-SNAPSHOT</version>
 </dependency>
 ```
 

@@ -26,15 +26,8 @@ AcpSyncAgent agent = AcpAgent.sync(transport)
         new NewSessionResponse(UUID.randomUUID().toString(), null, null))
 
     .promptHandler((req, context) -> {
-        // Extract text from prompt content
-        String text = req.prompt().stream()
-            .filter(c -> c instanceof TextContent)
-            .map(c -> ((TextContent) c).text())
-            .findFirst()
-            .orElse("");
-
         // Echo it back using convenience method
-        context.sendMessage("Echo: " + text);
+        context.sendMessage("Echo: " + req.text());
         return PromptResponse.endTurn();
     })
     .build();
