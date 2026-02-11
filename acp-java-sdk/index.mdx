@@ -14,6 +14,94 @@ ACP uses a subprocess model. A **client** (your application, or an editor like Z
 2. **Session** — client creates a session with a working directory context
 3. **Prompt** — client sends messages, agent streams back responses
 
+export const ProtocolAnimation = () => {
+  const containerRef = React.useRef(null);
+  const [status, setStatus] = React.useState("loading");
+
+  React.useEffect(() => {
+    let tweens = [];
+
+    function start() {
+      fetch("/acp-java-sdk/diagrams/acp-protocol.svg")
+        .then(res => res.text())
+        .then(svgText => {
+          if (!containerRef.current) return;
+
+          containerRef.current.innerHTML = svgText;
+          const svg = containerRef.current.querySelector("svg");
+          if (!svg) { setStatus("error"); return; }
+
+          svg.style.width = "100%";
+          svg.style.height = "auto";
+
+          if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+            setStatus("ready");
+            return;
+          }
+
+          const paths = svg.querySelectorAll(".messageLine0, .messageLine1");
+          const colors = ["#00e5ff", "#69f0ae", "#00e5ff", "#69f0ae", "#00e5ff", "#ffab40", "#00e5ff", "#69f0ae", "#ff4081"];
+
+          if (typeof gsap !== "undefined" && paths.length > 0) {
+            paths.forEach((path, index) => {
+              const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+              dot.setAttribute("r", "6");
+              dot.setAttribute("fill", colors[index % colors.length]);
+              dot.style.filter = "drop-shadow(0 0 4px " + colors[index % colors.length] + ")";
+              svg.appendChild(dot);
+
+              const length = path.getTotalLength();
+              const obj = { t: 0 };
+
+              tweens.push(gsap.to(obj, {
+                t: 1,
+                duration: 1.2,
+                delay: index * 0.6,
+                repeat: -1,
+                repeatDelay: 4,
+                ease: "power1.inOut",
+                onUpdate: () => {
+                  const point = path.getPointAtLength(obj.t * length);
+                  dot.setAttribute("cx", point.x);
+                  dot.setAttribute("cy", point.y);
+                }
+              }));
+            });
+          }
+          setStatus("ready");
+        })
+        .catch(() => setStatus("error"));
+    }
+
+    if (typeof gsap !== "undefined") {
+      start();
+    } else {
+      window.addEventListener("gsap-ready", start, { once: true });
+      setTimeout(start, 2000);
+    }
+
+    return () => tweens.forEach(t => t.kill());
+  }, []);
+
+  return (
+    <div style={{background: "#161b22", borderRadius: "8px", padding: "1.5rem", border: "1px solid #30363d", margin: "1rem 0"}}>
+      {status === "loading" && <div style={{color: "#8b949e", textAlign: "center", padding: "2rem"}}>Loading diagram...</div>}
+      {status === "error" && <div style={{color: "#ff6b6b", textAlign: "center", padding: "2rem"}}>Failed to load diagram</div>}
+      <div ref={containerRef} />
+      {status === "ready" && (
+        <div style={{display: "flex", gap: "1.5rem", flexWrap: "wrap", marginTop: "0.75rem", fontSize: "0.8rem", color: "#8b949e"}}>
+          <span><span style={{color: "#00e5ff"}}>&#9679;</span> request</span>
+          <span><span style={{color: "#69f0ae"}}>&#9679;</span> response</span>
+          <span><span style={{color: "#ffab40"}}>&#9679;</span> streaming update</span>
+          <span><span style={{color: "#ff4081"}}>&#9679;</span> agent → client request</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+<ProtocolAnimation />
+
 This is the same mechanism that Zed, JetBrains, and VS Code use to talk to AI agents. The SDK lets you build either side of that conversation.
 
 ## Overview

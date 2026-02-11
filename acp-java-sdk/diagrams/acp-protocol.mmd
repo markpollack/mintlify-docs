@@ -1,0 +1,16 @@
+sequenceDiagram
+    participant Editor as Editor / Client
+    participant Agent as ACP Agent
+
+    Editor->>Agent: initialize
+    Agent-->>Editor: capabilities
+
+    Editor->>Agent: session/new
+    Agent-->>Editor: sessionId
+
+    Editor->>Agent: prompt
+    Agent-->>Editor: AgentMessageChunk
+    Agent-->>Editor: AgentThoughtChunk
+    Agent->>Editor: readTextFile
+    Editor-->>Agent: file content
+    Agent-->>Editor: PromptResponse
