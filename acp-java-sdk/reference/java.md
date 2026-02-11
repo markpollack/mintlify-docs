@@ -53,6 +53,28 @@ WebSocket server transport for agents:
 </dependency>
 ```
 
+### Gradle
+
+```groovy
+// build.gradle
+implementation 'com.agentclientprotocol:acp-core:0.9.0'
+
+// Optional modules
+implementation 'com.agentclientprotocol:acp-agent-support:0.9.0'
+implementation 'com.agentclientprotocol:acp-websocket-jetty:0.9.0'
+testImplementation 'com.agentclientprotocol:acp-test:0.9.0'
+```
+
+```kotlin
+// build.gradle.kts
+implementation("com.agentclientprotocol:acp-core:0.9.0")
+
+// Optional modules
+implementation("com.agentclientprotocol:acp-agent-support:0.9.0")
+implementation("com.agentclientprotocol:acp-websocket-jetty:0.9.0")
+testImplementation("com.agentclientprotocol:acp-test:0.9.0")
+```
+
 ---
 
 ## Three Agent API Styles
