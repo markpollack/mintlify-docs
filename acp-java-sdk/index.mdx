@@ -43,30 +43,35 @@ export const ProtocolAnimation = () => {
           const colors = ["#00e5ff", "#69f0ae", "#00e5ff", "#69f0ae", "#00e5ff", "#ffab40", "#00e5ff", "#69f0ae", "#ff4081"];
 
           if (typeof gsap !== "undefined" && paths.length > 0) {
+            const tl = gsap.timeline({ repeat: -1, repeatDelay: 3 });
+
             paths.forEach((path, index) => {
               const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
               dot.setAttribute("r", "6");
               dot.setAttribute("fill", colors[index % colors.length]);
               dot.style.filter = "drop-shadow(0 0 4px " + colors[index % colors.length] + ")";
+              dot.style.opacity = "0";
               svg.appendChild(dot);
 
               const length = path.getTotalLength();
-              const obj = { t: 0 };
+              const pos = { t: 0 };
+              const offset = index * 0.5;
 
-              tweens.push(gsap.to(obj, {
+              tl.set(dot, { opacity: 1 }, offset);
+              tl.fromTo(pos, { t: 0 }, {
                 t: 1,
-                duration: 1.2,
-                delay: index * 0.6,
-                repeat: -1,
-                repeatDelay: 4,
+                duration: 1.0,
                 ease: "power1.inOut",
-                onUpdate: () => {
-                  const point = path.getPointAtLength(obj.t * length);
+                onUpdate: function() {
+                  var point = path.getPointAtLength(pos.t * length);
                   dot.setAttribute("cx", point.x);
                   dot.setAttribute("cy", point.y);
                 }
-              }));
+              }, offset);
+              tl.to(dot, { opacity: 0, duration: 0.3 }, offset + 1.0);
             });
+
+            tweens.push(tl);
           }
           setStatus("ready");
         })
@@ -265,4 +270,23 @@ All three styles produce identical protocol behavior. Choose based on programmin
 
 - [GitHub Repository](https://github.com/agentclientprotocol/java-sdk) — Source code
 - [ACP Java Tutorial](https://github.com/markpollack/acp-java-tutorial) — 30 hands-on modules
-- [Agent Client Protocol](https://agentclientprotocol.com/) — Official ACP specification
+
+### ACP Ecosystem
+
+- [Agent Client Protocol](https://agentclientprotocol.com/) — Official specification
+- [ACP Specification](https://agentclientprotocol.com/protocol/overview) — Protocol details (initialization, sessions, prompt turns)
+- [Agents Directory](https://agentclientprotocol.com/overview/agents) — ACP-compliant agents
+- [Clients Directory](https://agentclientprotocol.com/overview/clients) — Editors and clients that support ACP
+
+### Other ACP SDKs
+
+- [Kotlin SDK](https://github.com/agentclientprotocol/kotlin-sdk)
+- [Python SDK](https://github.com/agentclientprotocol/python-sdk)
+- [TypeScript SDK](https://github.com/agentclientprotocol/typescript-sdk)
+- [Rust SDK](https://github.com/agentclientprotocol/rust-sdk)
+
+### Editor Documentation
+
+- [Zed — External Agents](https://zed.dev/docs/ai/external-agents)
+- [JetBrains — ACP Support](https://www.jetbrains.com/help/ai-assistant/acp.html)
+- [VS Code — ACP Extension](https://github.com/formulahendry/vscode-acp)
