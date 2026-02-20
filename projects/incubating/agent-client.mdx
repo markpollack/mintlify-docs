@@ -113,6 +113,13 @@ Agent Client provides Agent SDKs for multiple platforms with Spring Boot auto-co
     Consistent interface across all agent providers
   </Card>
   <Card
+    title="Portable MCP Servers"
+    icon="plug"
+    href="#portable-mcp-servers"
+  >
+    Define MCP servers once, run on any agent provider
+  </Card>
+  <Card
     title="CLI Discovery"
     icon="magnifying-glass"
     href="https://spring-ai-community.github.io/agent-client/concepts/cli-agents.html"
@@ -120,6 +127,101 @@ Agent Client provides Agent SDKs for multiple platforms with Spring Boot auto-co
     Automatic detection of installed CLI tools
   </Card>
 </CardGroup>
+
+## Portable MCP Servers
+
+MCP (Model Context Protocol) server definitions that work across all supported agent providers. Define MCP servers once in a portable format; Agent Client translates them to each provider's native configuration at execution time.
+
+**How it works**: The client resolves server names from a catalog of portable definitions. The model layer translates each definition to the provider's native format — Claude gets a temp JSON config file via `--mcp-config`, Gemini gets `.gemini/settings.json` with `--allowed-mcp-server-names`. Your application code stays the same regardless of which agent runs the task.
+
+Three transport types are supported: `stdio` (subprocess), `sse` (Server-Sent Events), and `http`.
+
+<Note>
+Available since version 0.10.0. Currently supported by the **Claude** and **Gemini** agent models.
+</Note>
+
+### Defining a Catalog
+
+<Tabs>
+  <Tab title="JSON File">
+    Create an `mcp-servers.json` file:
+
+    ```json
+    {
+      "mcpServers": {
+        "brave-search": {
+          "type": "stdio",
+          "command": "npx",
+          "args": ["-y", "@modelcontextprotocol/server-brave-search"],
+          "env": { "BRAVE_API_KEY": "${BRAVE_API_KEY}" }
+        },
+        "weather": {
+          "type": "sse",
+          "url": "http://localhost:8080/sse"
+        }
+      }
+    }
+    ```
+
+    ```java
+    McpServerCatalog catalog = McpServerCatalog.fromJson(Path.of("mcp-servers.json"));
+    ```
+
+    Environment variable placeholders (`${VAR_NAME}`) are resolved from `System.getenv()` at load time. You can also point `fromJson` at a directory — all `*.json` files are parsed and merged into a single catalog.
+  </Tab>
+  <Tab title="Programmatic">
+    Build a catalog using the builder API:
+
+    ```java
+    McpServerCatalog catalog = McpServerCatalog.builder()
+        .add("brave-search", new McpServerDefinition.StdioDefinition(
+            "npx",
+            List.of("-y", "@modelcontextprotocol/server-brave-search"),
+            Map.of("BRAVE_API_KEY", System.getenv("BRAVE_API_KEY"))))
+        .add("weather", new McpServerDefinition.SseDefinition(
+            "http://localhost:8080/sse"))
+        .build();
+    ```
+  </Tab>
+</Tabs>
+
+### Using MCP Servers with AgentClient
+
+Set default servers on the builder, override per-request, or combine both:
+
+```java
+AgentClient client = AgentClient.builder(agentModel)
+    .mcpServerCatalog(catalog)
+    .defaultMcpServers("weather")        // Applied to every request
+    .build();
+
+// Uses the default "weather" server
+client.goal("What is the forecast in Portland?").run();
+
+// Override: use "brave-search" instead for this request
+client.goal("Research recent Spring AI releases")
+    .mcpServers("brave-search")
+    .run();
+
+// Multiple servers in a single request
+client.goal("Find weather data and summarize search results")
+    .mcpServers("weather", "brave-search")
+    .run();
+```
+
+### Provider Translation
+
+The same catalog produces the correct native configuration for each provider. No code changes needed when switching agents.
+
+| Provider | Native mechanism | What Agent Client generates |
+|----------|------------------|-----------------------------|
+| Claude   | `--mcp-config <path>` | Temporary JSON config file (cleaned up after) |
+| Gemini   | `.gemini/settings.json` | Settings file in working directory (cleaned up after) |
+
+### Limitations
+
+- **In-process MCP servers** (live SDK server instances) cannot be expressed portably. Use provider-specific options for those.
+- **Unresolved environment variables** in JSON catalogs are replaced with empty strings, not left as placeholders.
 
 ## Agent Roadmap
 
