@@ -76,23 +76,65 @@ That's the standard enterprise developers hold themselves to — and the standar
 Unlike static benchmarks, Spring AI Bench runs on YOUR repos:
 
 ```bash
-# 1. Clone and build dependencies (5 minutes)
+# Clone and build
 git clone https://github.com/spring-ai-community/agent-client.git
-cd agent-client && ./mvnw clean install -DskipTests
+cd agent-client && ./mvnw clean install -DskipTests && cd ..
 
 git clone https://github.com/spring-ai-community/spring-ai-bench.git
-cd spring-ai-bench
+cd spring-ai-bench && ./mvnw clean install -DskipTests
 
-# 2. Set your API keys
-export ANTHROPIC_API_KEY=your_key
-export GEMINI_API_KEY=your_key
+# Integrated run (agent built-in)
+./mvnw exec:java -pl bench-core -Dexec.args="run --benchmark hello-world --agent claude-code"
 
-# 3. Run on YOUR codebase
-./mvnw test -Dtest=HelloWorldMultiAgentTest -pl bench-agents
-
-# 4. View results in your browser
-open file:///tmp/bench-reports/index.html
+# Or decoupled (bring your own agent)
+./mvnw exec:java -pl bench-core -Dexec.args="provide --benchmark hello-world --item hello-world --workspace /tmp/task"
+cd /tmp/task && your-agent "$(cat INSTRUCTION.md)"
+./mvnw exec:java -pl bench-core -Dexec.args="grade --benchmark hello-world --item hello-world --workspace /tmp/task"
 ```
+
+## Bring Your Own Agent
+
+The filesystem is the contract. Any tool that can read a file and write files can compete.
+
+<Steps>
+  <Step title="Provide">
+    `bench provide` copies the workspace template and writes `INSTRUCTION.md` with the task description.
+  </Step>
+  <Step title="Run Any Agent">
+    Claude, Gemini, LangChain4j, a bash script — whatever reads the instruction and modifies the workspace.
+  </Step>
+  <Step title="Grade">
+    `bench grade` evaluates the workspace using YAML-configured judges from Agent Judge.
+  </Step>
+</Steps>
+
+<Note>
+Spring AI Bench is **agent-agnostic**. The provide/grade separation means any CLI tool, IDE agent, or custom script can participate in benchmarks — no SDK integration required.
+</Note>
+
+## CLI Commands
+
+| Command | Purpose |
+|---------|---------|
+| `bench list` | Discover available benchmarks |
+| `bench items --benchmark X` | List items in a benchmark |
+| `bench provide --benchmark X --item Y --workspace DIR` | Set up workspace with instruction |
+| `bench grade --benchmark X --item Y --workspace DIR` | Evaluate agent's work |
+| `bench run --benchmark X --agent Y` | Full pipeline: provide + invoke + grade |
+
+## Benchmark Format
+
+Benchmarks are YAML-driven, stored in the `benchmarks/` directory:
+
+```
+benchmarks/hello-world/
+├── benchmark.yaml       # jury config, metadata
+└── items/hello-world/
+    ├── item.yaml        # instruction, timeout
+    └── workspace/       # template files
+```
+
+`benchmark.yaml` configures the jury (which judges to use) and `item.yaml` defines the task instruction and grading criteria.
 
 ## Current Implementation
 
@@ -131,17 +173,17 @@ Spring AI Bench integrates with multiple AI agent providers through the Spring A
   </Card>
 </CardGroup>
 
-All agent providers support the same benchmark specifications, enabling fair comparisons across different AI models and platforms.
+All agent providers support the same benchmark specifications, enabling fair comparisons across different AI models and platforms. Any CLI agent can also participate via `agents/*.yaml` config and the ExecAgentInvoker — no code integration required.
 
 ### Benchmark Tracks
 
 <AccordionGroup>
   <Accordion title="✅ Production Ready">
-    - **hello-world**: File creation and basic infrastructure validation
-    - **Code Coverage Uplift**: Autonomous test generation achieving 71.4% coverage on Spring tutorials
+    - **hello-world**: File creation and basic infrastructure validation (YAML-driven format)
   </Accordion>
 
   <Accordion title="🚧 In Active Development">
+    - **Spring Code Coverage**: Coverage uplift on gs-rest-service, gs-accessing-data-jpa (Phase 2 target)
     - **Issue Analysis & Labeling**: Automated issue triage and classification
     - **Pull Request Review**: Comprehensive PR analysis with structured reports
     - **Static Analysis Remediation**: Fix code quality issues while preserving functionality
@@ -197,9 +239,10 @@ Spring AI Bench is built around a **Sandbox abstraction**:
 </CardGroup>
 
 **Key components:**
+- **BenchmarkCatalog**: YAML-driven benchmark discovery from `benchmarks/` directory
+- **ExecAgentInvoker**: Run any agent via `agents/*.yaml` config with template variable substitution (`${instruction}`, `${workspace}`)
+- **JudgeFactory**: Materializes YAML jury config into Judge instances (uses Agent Judge)
 - **BenchHarness**: End-to-end benchmark execution
-- **AgentRunner**: Agent execution with Spring AI Agents integration
-- **SuccessVerifier**: Validation of benchmark results
 - **ReportGenerator**: HTML and JSON report generation
 
 ## Resources
