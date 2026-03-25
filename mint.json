@@ -187,7 +187,6 @@
             }
           ]
         },
-        "projects/incubating/agent-experiment",
         "projects/incubating/agent-judge",
         "projects/incubating/agent-sandbox",
         "projects/incubating/spring-ai-agent-utils",
