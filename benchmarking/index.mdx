@@ -1,141 +1,99 @@
 ---
-title: "Spring AI Bench"
-description: "Open benchmarking for enterprise Java AI agents"
+title: "Agent Bench"
+description: "Benchmarking framework for AI coding agents on enterprise Java tasks"
 ---
 
 ## Overview
 
-Spring AI Bench is an open-source benchmarking framework focused on evaluating AI agents in enterprise Java development contexts. The project aims to provide transparent, reproducible benchmarks that address the limitations of existing approaches.
+Agent Bench evaluates AI coding agents on enterprise Java development tasks. It defines benchmarks as YAML, launches any CLI agent in a workspace, and grades results with cascaded judge tiers from [Agent Judge](https://github.com/spring-ai-community/agent-judge).
 
-## Why This Matters
+The filesystem is the interface. The bench writes `INSTRUCTION.md`; the agent reads it and modifies files. Claude Code, Gemini CLI, Amazon Q, or a shell script — any tool that reads a file and writes files can compete.
 
-### The Problem with Current Benchmarks
-
-Existing benchmarks like SWE-bench were groundbreaking for their time, but they have limitations:
-
-<Warning>
-**Key Limitations:**
-- **Python-centric**: 7-10% performance gap for non-Python languages
-- **Static datasets**: 2023 patches don't reflect current development patterns
-- **Narrow scope**: Only patch-loop agents, missing modern declarative approaches
-- **Single architecture**: Can't evaluate Claude, Gemini, Amazon Q, or other production agents
-- **Contamination**: Studies show 60%+ verified → 19% live performance drops
-</Warning>
-
-### Our Approach
+## How It Works
 
 <Steps>
-  <Step title="Full Development Lifecycle">
-    Measure agents on real enterprise tasks: issue triage, PR review, test coverage, compliance, API migration
+  <Step title="Provide">
+    Copy workspace template and write `INSTRUCTION.md` with the task description
   </Step>
-  <Step title="Language Diversity">
-    Java-first focus to address training bias, but extensible to other JVM and non-JVM languages
+  <Step title="Setup">
+    Run setup scripts in the workspace (clone repo, compile, measure baseline coverage)
   </Step>
-  <Step title="Agent Flexibility">
-    Support any agent via `AgentModel` abstraction—evaluate the tools YOUR team actually uses
+  <Step title="Agent">
+    Launch the agent command in the workspace — it reads `INSTRUCTION.md` and does the work
   </Step>
-  <Step title="Transparency & Reproducibility">
-    One-click Docker execution, open scaffolding, clear documentation of methodology
+  <Step title="Post">
+    Run post scripts (build, test, generate JaCoCo reports)
+  </Step>
+  <Step title="Grade">
+    Evaluate with a cascaded jury — each tier gates the next (build passes before checking coverage)
   </Step>
 </Steps>
 
 ## Technical Foundation
 
-Spring AI Bench provides:
-
 <CardGroup cols={3}>
-  <Card title="Sandbox Isolation" icon="box">
-    Docker/local sandboxes for secure, reproducible execution
+  <Card title="YAML-Driven Benchmarks" icon="file-code">
+    Benchmarks, tasks, and agent configs defined in YAML — no code changes to add a new benchmark
   </Card>
-  <Card title="Agent Abstraction" icon="puzzle-piece">
-    AgentModel interface supports any agent implementation
+  <Card title="Cascaded Jury" icon="gavel">
+    Multi-tier judge cascade with policies (REJECT_ON_ANY_FAIL, ACCEPT_ON_ALL_PASS, FINAL_TIER)
   </Card>
-  <Card title="Benchmark Tracks" icon="list-check">
-    Modular tracks for different enterprise development scenarios
+  <Card title="Any CLI Agent" icon="terminal">
+    Agent config is just `command` + `timeout` — any executable that reads files works
   </Card>
-  <Card title="Reporting" icon="chart-simple">
-    HTML/JSON reports with detailed metrics and analysis
+  <Card title="Pass@k Metrics" icon="chart-simple">
+    Multi-attempt runs with pass@k computation (Chen et al. formula)
   </Card>
-  <Card title="Extensibility" icon="arrows-split-up-and-left">
-    Run on YOUR repos with YOUR scenarios
+  <Card title="Extensible Judges" icon="puzzle-piece">
+    5 built-in judge types + custom types via `JudgeFactory.register()`
   </Card>
   <Card title="Open Source" icon="code-branch">
     Apache 2.0 licensed, community contributions welcome
   </Card>
 </CardGroup>
 
-## Current Status & Roadmap
+## Available Benchmarks
 
-### ✅ Completed
+| Benchmark | Tasks | What it measures |
+|-----------|-------|-----------------|
+| `hello-world` | 1 | File creation — validates infrastructure |
+| `code-coverage` | 1 (spring-petclinic) | JUnit test generation, JaCoCo coverage improvement |
 
-- Core benchmarking infrastructure
-- Sandbox isolation (Docker + local)
-- Agent integration framework
-- Multi-agent comparison support
-- HTML/JSON reporting
+## Current Status
 
-### 🚧 In Progress
-
-- Developing enterprise-focused benchmark tracks (test coverage, PR review, issue triage)
-- Expanding eval data collection
-- Gathering feedback from enterprise Java teams
-- Improving documentation and examples
-
-### 📋 Future Plans
-
-- Expanded language support (Kotlin, Scala, Groovy)
-- Cloud-based distributed execution
-- Integration with CI/CD pipelines
-- Additional benchmark tracks for common enterprise scenarios
-
-## Get Involved
-
-This is a community-driven initiative. We welcome participation from:
-
-<CardGroup cols={2}>
-  <Card title="Enterprise Teams" icon="building">
-    Share your real-world use cases and evaluation needs
-  </Card>
-  <Card title="AI Providers" icon="wand-magic-sparkles">
-    Contribute agent implementations and participate in benchmarks
-  </Card>
-  <Card title="Academic Researchers" icon="microscope">
-    Collaborate on methodology and research
-  </Card>
-  <Card title="Open Source Contributors" icon="code">
-    Improve the framework, add benchmark tracks, fix bugs
-  </Card>
-</CardGroup>
+<Note>
+Agent Bench is in active development. The harness, CLI, result model, and judge integration are working. The code-coverage benchmark has validated judges (T0-T2 pass against a preserved experiment workspace with 91.6% coverage). A live end-to-end agent run is next.
+</Note>
 
 ## Resources
 
 <CardGroup cols={2}>
   <Card
-    title="Spring AI Bench Documentation"
-    icon="book"
-    href="https://spring-ai-community.github.io/spring-ai-bench/"
-  >
-    Technical documentation for the benchmarking framework
-  </Card>
-  <Card
-    title="Spring AI Bench Project"
+    title="Agent Bench Project"
     icon="flask"
-    href="/projects/incubating/spring-ai-bench"
+    href="/projects/incubating/agent-bench"
   >
-    Learn more about the Spring AI Bench project
+    Full documentation with CLI reference, YAML formats, and architecture
   </Card>
   <Card
     title="GitHub Repository"
     icon="github"
-    href="https://github.com/spring-ai-community/spring-ai-bench"
+    href="https://github.com/spring-ai-community/agent-bench"
   >
-    View source code and contribute
+    Source code and benchmarks
+  </Card>
+  <Card
+    title="Agent Judge"
+    icon="gavel"
+    href="https://github.com/spring-ai-community/agent-judge"
+  >
+    Cascaded judge framework used for grading
   </Card>
   <Card
     title="Contact Us"
     icon="envelope"
     href="https://github.com/spring-ai-community/community/issues"
   >
-    Get in touch about collaboration opportunities
+    Questions and collaboration
   </Card>
 </CardGroup>

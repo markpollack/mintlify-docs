@@ -1,0 +1,156 @@
+---
+title: "Agent Bench"
+description: "Benchmarking framework for AI coding agents on enterprise Java tasks"
+---
+
+<img src="https://img.shields.io/badge/Status-Incubating-blue" />
+
+[GitHub](https://github.com/spring-ai-community/agent-bench) • [Agent Judge](https://github.com/spring-ai-community/agent-judge) • [Agent Client](https://github.com/spring-ai-community/agent-client)
+
+## Overview
+
+Agent Bench defines benchmarks as YAML, launches any CLI agent in an isolated workspace, and grades results with cascaded judge tiers from [Agent Judge](https://github.com/spring-ai-community/agent-judge).
+
+The filesystem is the contract. The bench writes `INSTRUCTION.md` to the workspace. The agent reads it and modifies files. Any CLI tool — Claude Code, Gemini CLI, Amazon Q, a shell script — can compete.
+
+## How It Works
+
+```
+provide → setup scripts → agent → post scripts → grade → result.json
+```
+
+1. **Provide** copies the workspace template and writes `INSTRUCTION.md`
+2. **Setup** scripts prepare the workspace (clone repo, compile, measure baseline)
+3. **Agent** runs — any command that reads `INSTRUCTION.md` and modifies files
+4. **Post** scripts finalize (run tests, generate coverage reports)
+5. **Grade** evaluates with a cascaded jury
+
+## Benchmark Format
+
+```
+benchmarks/code-coverage/
+├── benchmark.yaml       # jury config: cascaded judge tiers
+├── prompts/             # judge prompts
+└── tasks/
+    └── spring-petclinic/
+        └── task.yaml    # instruction, setup/post scripts, metadata
+```
+
+### benchmark.yaml — Jury Configuration
+
+```yaml
+schema: bench.benchmark.v1
+name: code-coverage
+version: "1.0"
+default-timeout: PT45M
+
+jury:
+  tiers:
+    - name: build
+      policy: REJECT_ON_ANY_FAIL
+      checks:
+        - type: maven-build
+          goals: [clean, test]
+    - name: coverage-improvement
+      policy: ACCEPT_ON_ALL_PASS
+      checks:
+        - type: coverage-improvement
+          min: 50.0
+```
+
+### task.yaml — Task Definition
+
+```yaml
+schema: bench.task.v1
+id: spring-petclinic
+instruction: |
+  Write JUnit tests for this Spring Boot project to maximize code coverage.
+  Use narrow test slices (@WebMvcTest, @DataJpaTest) over @SpringBootTest.
+timeout: PT45M
+metadata:
+  baselineCoverage: 0.0
+setup:
+  - "git init && git remote add origin ... && git fetch --depth 1 origin edf4db28affc && git checkout FETCH_HEAD"
+  - "./mvnw clean compile -q"
+post:
+  - "./mvnw clean test jacoco:report -q"
+```
+
+### Agent Config
+
+Agents are defined by a command and a timeout:
+
+```yaml
+# agents/claude-code.yaml
+command: claude --print --dangerously-skip-permissions 'Read INSTRUCTION.md and follow the instructions precisely.'
+timeout: PT45M
+```
+
+## CLI
+
+| Command | Purpose |
+|---------|---------|
+| `bench list` | List available benchmarks |
+| `bench tasks --benchmark <name>` | List tasks in a benchmark |
+| `bench provide --benchmark <name> --task <id> --workspace <dir>` | Set up workspace |
+| `bench grade --benchmark <name> --task <id> --workspace <dir>` | Evaluate agent's work |
+| `bench run --benchmark <name> --agent <config>` | Full pipeline |
+
+## Bring Your Own Agent
+
+```bash
+# 1. Set up workspace
+bench provide --benchmark code-coverage --task spring-petclinic --workspace /tmp/petclinic
+
+# 2. Run any agent
+cd /tmp/petclinic && your-agent "$(cat INSTRUCTION.md)"
+
+# 3. Grade
+bench grade --benchmark code-coverage --task spring-petclinic --workspace /tmp/petclinic
+```
+
+## Built-in Judge Types
+
+| Type | What it checks |
+|------|----------------|
+| `file-exists` | File exists at path |
+| `file-content` | File content matches expected |
+| `maven-build` | Maven build succeeds |
+| `coverage-preservation` | JaCoCo coverage not dropped from baseline |
+| `coverage-improvement` | JaCoCo coverage exceeds threshold |
+
+Custom types registered via `JudgeFactory.register()`.
+
+## Current Status
+
+| Benchmark | Tasks | Status |
+|-----------|-------|--------|
+| `hello-world` | 1 | Working |
+| `code-coverage` | 1 (spring-petclinic) | Judges validated, end-to-end run pending |
+
+## Architecture
+
+Two modules: `agent-bench-core` (CLI, catalog, judge factory, result model) and `agent-bench-agents` (LLM-based judges). Module layering enforced by ArchUnit.
+
+## Resources
+
+<CardGroup cols={2}>
+  <Card
+    title="GitHub Repository"
+    icon="github"
+    href="https://github.com/spring-ai-community/agent-bench"
+  >
+    Source code and benchmarks
+  </Card>
+  <Card
+    title="Agent Judge"
+    icon="gavel"
+    href="https://github.com/spring-ai-community/agent-judge"
+  >
+    Cascaded judge framework (core dependency)
+  </Card>
+</CardGroup>
+
+## License
+
+Apache License 2.0
