@@ -190,7 +190,13 @@
         "projects/incubating/agent-judge",
         "projects/incubating/agent-sandbox",
         "projects/incubating/spring-ai-agent-utils",
-        "projects/incubating/agent-client",
+        {
+          "group": "Agent Client",
+          "pages": [
+            "projects/incubating/agent-client",
+            "agent-client/sessions"
+          ]
+        },
         "projects/incubating/github-collector",
         "projects/incubating/spring-ai-bedrock-agentcore",
         "projects/incubating/agent-bench",
