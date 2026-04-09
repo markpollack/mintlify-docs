@@ -41,19 +41,7 @@
     {
       "group": "Projects",
       "pages": [
-        "projects/index"
-      ]
-    },
-    {
-      "group": "Production Projects",
-      "pages": [
-        "projects/production/moonshot",
-        "projects/production/qianfan"
-      ]
-    },
-    {
-      "group": "Incubating Projects",
-      "pages": [
+        "projects/index",
         {
           "group": "Claude Agent SDK",
           "pages": [
@@ -187,26 +175,48 @@
             }
           ]
         },
-        "projects/incubating/agent-judge",
-        "projects/incubating/agent-sandbox",
-        "projects/incubating/spring-ai-agent-utils",
         {
-          "group": "Agent Client",
+          "group": "Agent Tools",
           "pages": [
-            "projects/incubating/agent-client",
-            "agent-client/sessions"
+            "projects/incubating/spring-ai-agent-utils",
+            {
+              "group": "Agent Client",
+              "pages": [
+                "projects/incubating/agent-client",
+                "agent-client/sessions"
+              ]
+            },
+            "projects/incubating/agent-judge",
+            "projects/incubating/agent-sandbox",
+            "projects/incubating/agent-bench",
+            "projects/incubating/github-collector",
+            "projects/incubating/spring-ai-tool-search-tool"
           ]
         },
-        "projects/incubating/github-collector",
-        "projects/incubating/spring-ai-bedrock-agentcore",
-        "projects/incubating/agent-bench",
-        "projects/incubating/spring-ai-playground",
-        "projects/incubating/spring-ai-replicate",
-        "projects/incubating/spring-ai-tool-search-tool",
-        "projects/incubating/mcp-annotations",
-        "projects/incubating/mcp-security",
-        "projects/incubating/spring-agui",
-        "projects/incubating/spring-ai-vaadin"
+        {
+          "group": "MCP",
+          "pages": [
+            "projects/incubating/mcp-annotations",
+            "projects/incubating/mcp-security"
+          ]
+        },
+        {
+          "group": "Integrations & UI",
+          "pages": [
+            "projects/incubating/spring-ai-bedrock-agentcore",
+            "projects/incubating/spring-ai-replicate",
+            "projects/incubating/spring-ai-playground",
+            "projects/incubating/spring-agui",
+            "projects/incubating/spring-ai-vaadin"
+          ]
+        },
+        {
+          "group": "Attic",
+          "pages": [
+            "projects/attic/moonshot",
+            "projects/attic/qianfan"
+          ]
+        }
       ]
     },
     {

@@ -1,36 +1,32 @@
 ---
 title: "Our Projects"
-description: "Spring AI Community projects - from production-ready integrations to innovative incubating initiatives"
+description: "Spring AI Community projects"
 ---
 
 <Tip>
 **New!** [GitHub Collector](/projects/incubating/github-collector) — Collect GitHub issues, PRs, and releases for research. Zero Java setup with JBang.
 </Tip>
 
-## Production Projects
-
-Battle-tested projects ready for production use.
+## Agent SDKs
 
 <CardGroup cols={2}>
   <Card
-    title="Moonshot"
-    icon="moon"
-    href="/projects/production/moonshot"
+    title="Claude Agent SDK"
+    icon="robot"
+    href="/claude-agent-sdk/index"
   >
-    Support for Chinese Moonshot AI models (moonshot-v1-8k/32k/128k)
+    Java SDK for the Claude Agent protocol with blocking and reactive APIs
   </Card>
   <Card
-    title="QianFan"
-    icon="cloud"
-    href="/projects/production/qianfan"
+    title="ACP Java SDK"
+    icon="network-wired"
+    href="/acp-java-sdk/index"
   >
-    Integration with Baidu's QianFan AI platform
+    Agent Communication Protocol client and server SDK for Java
   </Card>
 </CardGroup>
 
-## Incubating Projects
-
-Innovative projects under active development.
+## Agent Tools
 
 <CardGroup cols={2}>
   <Card
@@ -48,13 +44,6 @@ Innovative projects under active development.
     Autonomous CLI agents (Claude Code, Gemini) with Spring Boot integration
   </Card>
   <Card
-    title="GitHub Collector"
-    icon="database"
-    href="/projects/incubating/github-collector"
-  >
-    Collect GitHub issues, PRs, and releases for research and analysis
-  </Card>
-  <Card
     title="Agent Judge"
     icon="gavel"
     href="/projects/incubating/agent-judge"
@@ -69,13 +58,6 @@ Innovative projects under active development.
     Isolated command execution API - Local, Docker, and E2B cloud backends
   </Card>
   <Card
-    title="Spring AI Bedrock AgentCore"
-    icon="aws"
-    href="/projects/incubating/spring-ai-bedrock-agentcore"
-  >
-    AWS Bedrock AgentCore runtime integration for Spring AI
-  </Card>
-  <Card
     title="Agent Bench"
     icon="chart-bar"
     href="/projects/incubating/agent-bench"
@@ -83,11 +65,11 @@ Innovative projects under active development.
     Enterprise Java AI agent benchmarking beyond SWE-bench
   </Card>
   <Card
-    title="Spring AI Replicate"
-    icon="repeat"
-    href="/projects/incubating/spring-ai-replicate"
+    title="GitHub Collector"
+    icon="database"
+    href="/projects/incubating/github-collector"
   >
-    Access hundreds of AI models on Replicate.com
+    Collect GitHub issues, PRs, and releases for research and analysis
   </Card>
   <Card
     title="Spring AI Tool Search Tool"
@@ -96,6 +78,11 @@ Innovative projects under active development.
   >
     Dynamic tool discovery with 80-90% token savings
   </Card>
+</CardGroup>
+
+## MCP
+
+<CardGroup cols={2}>
   <Card
     title="MCP Annotations"
     icon="at"
@@ -109,6 +96,25 @@ Innovative projects under active development.
     href="/projects/incubating/mcp-security"
   >
     Security support for Model Context Protocol implementations
+  </Card>
+</CardGroup>
+
+## Integrations & UI
+
+<CardGroup cols={2}>
+  <Card
+    title="Spring AI Bedrock AgentCore"
+    icon="aws"
+    href="/projects/incubating/spring-ai-bedrock-agentcore"
+  >
+    AWS Bedrock AgentCore runtime integration for Spring AI
+  </Card>
+  <Card
+    title="Spring AI Replicate"
+    icon="repeat"
+    href="/projects/incubating/spring-ai-replicate"
+  >
+    Access hundreds of AI models on Replicate.com
   </Card>
   <Card
     title="Spring AI Playground"
@@ -130,6 +136,27 @@ Innovative projects under active development.
     href="/projects/incubating/spring-ai-vaadin"
   >
     Vaadin UIs for Spring AI chat and RAG applications
+  </Card>
+</CardGroup>
+
+## Attic
+
+Projects no longer actively maintained.
+
+<CardGroup cols={2}>
+  <Card
+    title="Moonshot"
+    icon="moon"
+    href="/projects/attic/moonshot"
+  >
+    Java client for Moonshot AI API with Spring AI integration
+  </Card>
+  <Card
+    title="QianFan"
+    icon="cloud"
+    href="/projects/attic/qianfan"
+  >
+    Integration with Baidu's QianFan AI platform
   </Card>
 </CardGroup>
 
