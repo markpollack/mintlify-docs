@@ -121,12 +121,14 @@ bench grade --benchmark code-coverage --task spring-petclinic --workspace /tmp/p
 
 Custom types registered via `JudgeFactory.register()`.
 
-## Current Status
+## Benchmarks
 
-| Benchmark | Tasks | Status |
-|-----------|-------|--------|
-| `hello-world` | 1 | Working |
-| `code-coverage` | 1 (spring-petclinic) | Judges validated, end-to-end run pending |
+| Benchmark | Tasks | Description |
+|-----------|-------|-------------|
+| `hello-world` | 1 | Smoke test for validating the harness — submit your own agent to verify it works |
+| `code-coverage` | 1 (spring-petclinic) | Write JUnit tests from scratch to maximize JaCoCo coverage, graded by a 4-tier jury |
+
+The code-coverage benchmark was validated in a [29-run experiment](https://github.com/markpollack/experiment-code-coverage-v2) testing 7 prompt/knowledge variants with Claude Sonnet 4.6 on spring-petclinic. See the [blog post](https://blog.pollack.ai/i-read-my-agents-diary/) for analysis.
 
 ## Architecture
 
@@ -148,6 +150,20 @@ Two modules: `agent-bench-core` (CLI, catalog, judge factory, result model) and 
     href="https://github.com/spring-ai-community/agent-judge"
   >
     Cascaded judge framework (core dependency)
+  </Card>
+  <Card
+    title="Code Coverage Experiment"
+    icon="flask"
+    href="https://github.com/markpollack/experiment-code-coverage-v2"
+  >
+    29-run benchmark study with variant analysis
+  </Card>
+  <Card
+    title="Blog: I Read My Agent's Diary"
+    icon="book-open"
+    href="https://blog.pollack.ai/i-read-my-agents-diary/"
+  >
+    Analysis of the code-coverage experiment results
   </Card>
 </CardGroup>
 
