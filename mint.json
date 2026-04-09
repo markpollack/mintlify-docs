@@ -176,7 +176,7 @@
           ]
         },
         {
-          "group": "Agent Tools",
+          "group": "Agentic",
           "pages": [
             "projects/incubating/spring-ai-agent-utils",
             {
