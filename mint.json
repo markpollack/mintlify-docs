@@ -114,7 +114,7 @@
           ]
         },
         {
-          "group": "ACP Java SDK",
+          "group": "ACP Tutorial",
           "pages": [
             "acp-java-sdk/index",
             {
