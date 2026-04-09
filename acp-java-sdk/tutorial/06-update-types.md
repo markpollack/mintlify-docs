@@ -4,7 +4,7 @@ Comprehensive coverage of all `SessionUpdate` types in ACP.
 
 ## What You'll Learn
 
-- All seven `SessionUpdate` types and when they appear
+- All `SessionUpdate` types and when they appear
 - Dispatching on update types with `instanceof`
 - Building rich UIs that show agent activity
 
@@ -37,6 +37,12 @@ AcpSyncClient client = AcpClient.sync(transport)
                 commands.availableCommands().size() + " available");
         } else if (update instanceof CurrentModeUpdate mode) {
             System.out.println("[Mode] " + mode.currentModeId());
+        } else if (update instanceof UsageUpdate usage) {
+            System.out.printf("[Usage] %d/%d tokens%n", usage.used(), usage.size());
+            if (usage.cost() != null) {
+                System.out.printf("  Cost: %.4f %s%n",
+                    usage.cost().amount(), usage.cost().currency());
+            }
         }
     })
     .build();
@@ -53,6 +59,7 @@ AcpSyncClient client = AcpClient.sync(transport)
 | `Plan` | Agent's planned steps | Show step list with priorities and completion |
 | `AvailableCommandsUpdate` | Slash commands | Populate command palette |
 | `CurrentModeUpdate` | Mode change | Update UI mode indicator |
+| `UsageUpdate` | Token usage and cost | Show context window usage bar (unstable) |
 
 This module extends Module 05 by handling every update type rather than just messages.
 

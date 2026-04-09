@@ -555,6 +555,7 @@ All protocol types are defined in `AcpSchema` as Java records.
 | `Plan` | Agent's planned steps |
 | `AvailableCommandsUpdate` | Advertised slash commands |
 | `CurrentModeUpdate` | Agent mode change |
+| `UsageUpdate` | Context window and cost usage (unstable) |
 
 ### Stop Reasons
 
