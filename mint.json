@@ -117,6 +117,7 @@
           "group": "ACP",
           "pages": [
             "acp-java-sdk/index",
+            "acp-autoconfig/index",
             {
               "group": "Reference",
               "pages": [
