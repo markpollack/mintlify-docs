@@ -164,7 +164,14 @@
                   ]
                 },
                 {
-                  "group": "Part 4: IDE Integration",
+                  "group": "Part 4: Spring Boot",
+                  "pages": [
+                    "acp-java-sdk/tutorial/23-spring-boot-agent",
+                    "acp-java-sdk/tutorial/24-spring-boot-client"
+                  ]
+                },
+                {
+                  "group": "Part 5: IDE Integration",
                   "pages": [
                     "acp-java-sdk/tutorial/28-zed-integration",
                     "acp-java-sdk/tutorial/29-jetbrains-integration",
