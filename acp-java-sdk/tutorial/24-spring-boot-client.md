@@ -21,7 +21,7 @@ Same starter as the agent side:
 <dependency>
     <groupId>org.springaicommunity</groupId>
     <artifactId>acp-spring-boot-starter</artifactId>
-    <version>0.10.0</version>
+    <version>0.11.0</version>
 </dependency>
 ```
 
@@ -113,3 +113,5 @@ The autoconfiguration picks the transport based on which properties are set:
 | `spring.acp.client.capabilities.read-text-file` | `true` | Advertise file read capability |
 | `spring.acp.client.capabilities.write-text-file` | `true` | Advertise file write capability |
 | `spring.acp.client.capabilities.terminal` | `false` | Advertise terminal capability |
+
+[View on GitHub](https://github.com/markpollack/acp-java-tutorial/tree/main/module-24-spring-boot-client)

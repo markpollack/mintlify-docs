@@ -21,7 +21,7 @@ Add the ACP Spring Boot Starter:
 <dependency>
     <groupId>org.springaicommunity</groupId>
     <artifactId>acp-spring-boot-starter</artifactId>
-    <version>0.10.0</version>
+    <version>0.11.0</version>
 </dependency>
 ```
 
@@ -138,3 +138,5 @@ The `keep-alive` setting is essential. Without it, the Spring Boot application s
 ## Next
 
 [Module 24: Spring Boot Client](/acp-java-sdk/tutorial/24-spring-boot-client) — use the autoconfigured client to connect to agents.
+
+[View on GitHub](https://github.com/markpollack/acp-java-tutorial/tree/main/module-23-spring-boot-agent)
