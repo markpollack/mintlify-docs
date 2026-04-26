@@ -191,6 +191,7 @@
               "group": "Agent Client",
               "pages": [
                 "projects/incubating/agent-client",
+                "agent-client/defaults-philosophy",
                 "agent-client/sessions"
               ]
             },
