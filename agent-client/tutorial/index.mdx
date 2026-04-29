@@ -1,0 +1,42 @@
+---
+title: "Agent Client Tutorial"
+description: "Learn Spring AI Agent Client step by step — from your first task to multi-provider workflows"
+sidebarTitle: "Tutorial Overview"
+---
+
+## Learning Path
+
+This tutorial takes you from zero to running agent tasks with multiple providers. Each lesson builds on the previous one.
+
+<Steps>
+  <Step title="First Task">
+    Create a file using an agent — the simplest possible task. You'll set up a Spring Boot project, configure a provider, and verify the result.
+
+    [Start Lesson 1 →](/agent-client/tutorial/01-first-task)
+  </Step>
+  <Step title="Multi-Provider">
+    Run the same task with Claude, Codex, and Gemini. Learn the Maven profile pattern for switching providers without changing code.
+
+    [Start Lesson 2 →](/agent-client/tutorial/02-multi-provider)
+  </Step>
+</Steps>
+
+## Prerequisites
+
+- Java 17+
+- Maven 3.9+
+- At least one CLI agent installed:
+  - Claude Code: `npm install -g @anthropic-ai/claude-code`
+  - Codex CLI: `npm install -g @openai/codex`
+  - Gemini CLI: `npm install -g @anthropic-ai/gemini` (check current install method)
+
+## Source Code
+
+All tutorial code is available in the [agent-client-tutorial](https://github.com/spring-ai-community/agent-client-tutorial) repository:
+
+```bash
+git clone https://github.com/spring-ai-community/agent-client-tutorial.git
+cd agent-client-tutorial
+```
+
+Each lesson corresponds to a numbered directory (`01-create-file/`, etc.).
