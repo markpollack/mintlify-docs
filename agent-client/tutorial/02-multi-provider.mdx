@@ -58,7 +58,7 @@ AgentClientResponse response = client.run(
 ```
 
 <Note>
-`skipGitCheck(true)` lets Codex work in any directory. Without it, Codex requires a git repository. See [Codex Reference](/agent-client/codex-reference#skipgitcheck-and-mode-interaction) for details.
+`skipGitCheck(true)` lets Codex work in any directory. Without it, Codex requires a git repository. See [Codex Reference](/agent-client/reference/codex-reference#skipgitcheck-and-mode-interaction) for details.
 </Note>
 
 ## Step 3: Run with Gemini
@@ -103,10 +103,10 @@ While the client API is portable, providers have different capabilities:
 
 ## With Spring Boot
 
-In Spring Boot applications, you don't construct models manually. Use starter dependencies and Maven profiles to switch providers without changing code at all — see the [Switching Providers](/agent-client/switching-providers) how-to guide.
+In Spring Boot applications, you don't construct models manually. Use starter dependencies and Maven profiles to switch providers without changing code at all — see the [Switching Providers](/agent-client/howto/switching-providers) how-to guide.
 
 ## Next Steps
 
-- [Switching Providers](/agent-client/switching-providers) — The Spring Boot profile pattern for zero-code provider switching
-- [Configuration Reference](/agent-client/portable-options) — All configuration options across providers
-- [Defaults Philosophy](/agent-client/defaults-philosophy) — Why LOOSE mode exists and how it affects each provider
+- [Switching Providers](/agent-client/howto/switching-providers) — The Spring Boot profile pattern for zero-code provider switching
+- [Configuration Reference](/agent-client/reference/portable-options) — All configuration options across providers
+- [Defaults Philosophy](/agent-client/explanation/defaults-philosophy) — Why LOOSE mode exists and how it affects each provider

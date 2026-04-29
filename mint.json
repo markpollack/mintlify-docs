@@ -202,25 +202,25 @@
                 {
                   "group": "How-to",
                   "pages": [
-                    "agent-client/getting-started",
-                    "agent-client/switching-providers",
-                    "agent-client/structured-output"
+                    "agent-client/howto/getting-started",
+                    "agent-client/howto/switching-providers",
+                    "agent-client/howto/structured-output"
                   ]
                 },
                 {
                   "group": "Reference",
                   "pages": [
-                    "agent-client/portable-options",
-                    "agent-client/claude-reference",
-                    "agent-client/codex-reference",
-                    "agent-client/gemini-reference",
-                    "agent-client/sessions"
+                    "agent-client/reference/portable-options",
+                    "agent-client/reference/claude-reference",
+                    "agent-client/reference/codex-reference",
+                    "agent-client/reference/gemini-reference",
+                    "agent-client/reference/sessions"
                   ]
                 },
                 {
                   "group": "Explanation",
                   "pages": [
-                    "agent-client/defaults-philosophy"
+                    "agent-client/explanation/defaults-philosophy"
                   ]
                 }
               ]

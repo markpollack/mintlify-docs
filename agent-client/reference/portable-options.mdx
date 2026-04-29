@@ -30,7 +30,7 @@ Agent behavior is determined by a layered precedence system. Higher layers overr
 ```
 
 <Note>
-**Explicit always wins.** If you set `spring.ai.agents.codex.skip-git-check=true` alongside `spring.ai.agents.mode=strict`, the explicit property wins. See [Defaults Philosophy](/agent-client/defaults-philosophy) for the full rationale.
+**Explicit always wins.** If you set `spring.ai.agents.codex.skip-git-check=true` alongside `spring.ai.agents.mode=strict`, the explicit property wins. See [Defaults Philosophy](/agent-client/explanation/defaults-philosophy) for the full rationale.
 </Note>
 
 ### Example: Precedence in Action
@@ -63,7 +63,7 @@ spring:
       mode: loose    # or strict
 ```
 
-See [Defaults Philosophy](/agent-client/defaults-philosophy) for detailed mode-vs-property interaction examples.
+See [Defaults Philosophy](/agent-client/explanation/defaults-philosophy) for detailed mode-vs-property interaction examples.
 
 ## Promotion Rubric
 
@@ -94,13 +94,13 @@ Options that don't meet the rubric remain in the provider-specific namespace ind
 ## Provider Reference Pages
 
 <CardGroup cols={3}>
-  <Card title="Claude" icon="terminal" href="/agent-client/claude-reference">
+  <Card title="Claude" icon="terminal" href="/agent-client/reference/claude-reference">
     18 properties — `spring.ai.agents.claude-code.*`
   </Card>
-  <Card title="Codex" icon="code" href="/agent-client/codex-reference">
+  <Card title="Codex" icon="code" href="/agent-client/reference/codex-reference">
     6 properties — `spring.ai.agents.codex.*`
   </Card>
-  <Card title="Gemini" icon="sparkles" href="/agent-client/gemini-reference">
+  <Card title="Gemini" icon="sparkles" href="/agent-client/reference/gemini-reference">
     6 properties — `spring.ai.agents.gemini.*`
   </Card>
 </CardGroup>
