@@ -1,6 +1,6 @@
 ---
 title: "Agent Client"
-description: "Autonomous CLI agent integrations for the Spring AI ecosystem"
+description: "Portable Java API for autonomous CLI agents — Claude Code, Codex, Gemini, Amazon Q, and Amp"
 ---
 
 <img
@@ -8,453 +8,179 @@ description: "Autonomous CLI agent integrations for the Spring AI ecosystem"
   alt="Incubating Status"
 />
 
-[GitHub](https://github.com/spring-ai-community/agent-client) • [Docs](https://spring-ai-community.github.io/agent-client/) • [Maven](https://central.sonatype.com/repository/maven-snapshots/org/springaicommunity/agents/)
+[GitHub](https://github.com/spring-ai-community/agent-client) • [Maven Central](https://central.sonatype.com/search?q=g:org.springaicommunity.agents) • [Tutorial](https://github.com/spring-ai-community/agent-client-tutorial)
 
 <Note>
-**Renamed**: This project was previously called "Spring AI Agents" and has been renamed to "Agent Client" in version 0.9.0. The evaluation framework (Agent Judge) and sandbox isolation (Agent Sandbox) have been extracted into separate repositories.
+**Version 0.15.0** — Available on [Maven Central](https://central.sonatype.com/search?q=g:org.springaicommunity.agents)
 </Note>
+
+## What's New in 0.15.0
+
+- **AgentClientMode** (LOOSE/STRICT) — portable enum controlling default permissiveness. Codex now works in non-git directories out of the box.
+- **Provider Parity TCK** — `@ProviderCapability` annotation with JUnit Assumptions for cross-provider testing.
+- **Reference documentation** — complete configuration reference for all 30+ properties across Claude, Codex, and Gemini.
+- **Tutorial repository** — progressive examples at [agent-client-tutorial](https://github.com/spring-ai-community/agent-client-tutorial).
 
 ## Overview
 
-**What ChatClient did for completion endpoints, AgentClient does for Agent CLIs.**
+**What ChatClient did for completion endpoints, AgentClient does for agent CLIs.**
 
-Agent Client provides a unified framework for autonomous agents with **Goals** (clear objectives), **Tools** (actions agents can take), **Context** (information for decisions), **Judges** (automated verification), and **Sandboxes** (isolated execution). This project brings multiple AI agent platforms to Spring applications as first-class citizens with Spring Boot auto-configuration.
+Agent Client provides a portable Java API for autonomous CLI agents. Build a model, create a client, run a goal — provider selection happens at construction time, everything after is portable.
 
-Currently supported: **[Claude Code](https://www.anthropic.com/claude/code)**, **[Gemini](https://ai.google.dev/gemini-api)**, **[Amazon Q](https://aws.amazon.com/q/developer/)**, **[Amp](https://www.amp.ai/)**, and **[Codex](https://openai.com/index/openai-codex/)**. Coming soon: **[Goose](https://github.com/square/goose)**, **[Aider](https://aider.chat/)**, **[OpenHands](https://www.all-hands.dev/)**, and **[GitHub Copilot CLI](https://github.com/features/copilot/cli)**.
+```java
+// Provider-specific: build the model
+ClaudeAgentModel model = ClaudeAgentModel.builder()
+    .defaultOptions(ClaudeAgentOptions.builder()
+        .model("claude-sonnet-4-5")
+        .yolo(true)
+        .build())
+    .build();
 
-<img src="/images/projects/spring-ai-agents-workflow.png" alt="Agent Execution Workflow" />
+// Portable: works with any provider
+AgentClient client = AgentClient.create(model);
+AgentClientResponse response = client.run("Create hello.txt with 'Hello!'");
+```
 
-<Note>
-**Version**: 0.10.0 — Available on [Maven Central](https://central.sonatype.com/search?q=org.springaicommunity.agents)
-</Note>
+No Spring Boot required. Optional Spring Boot starters provide auto-configuration for those who want it.
 
-## Agent SDKs
-
-Agent Client provides Agent SDKs for multiple platforms with Spring Boot auto-configuration:
+## Supported Providers
 
 <CardGroup cols={3}>
-  <Card
-    title="Claude Agent SDK"
-    icon="robot"
-    href="https://spring-ai-community.github.io/agent-client/api/claude-code-sdk.html"
-  >
-    <img src="/images/agents/claude-code-logo.png" alt="Claude Code" style={{width: '60px', marginBottom: '0.5rem'}} />
-
-    Anthropic's Claude Code agent
+  <Card title="Claude Code" icon="terminal" href="/agent-client/reference/claude-reference">
+    Anthropic's autonomous coding agent — 18 configuration options
   </Card>
-  <Card
-    title="Gemini Agent SDK"
-    icon="sparkles"
-    href="https://spring-ai-community.github.io/agent-client/api/gemini-cli-sdk.html"
-  >
-    <img src="/images/agents/gemini-logo.png" alt="Gemini" style={{width: '60px', marginBottom: '0.5rem'}} />
-
-    Google's Gemini CLI agent
+  <Card title="Codex" icon="code" href="/agent-client/reference/codex-reference">
+    OpenAI's code generation agent — LOOSE mode for frictionless setup
   </Card>
-  <Card
-    title="Amazon Q Agent SDK"
-    icon="aws"
-    href="https://spring-ai-community.github.io/agent-client/api/amazon-q-cli-sdk.html"
-  >
-    <img src="/images/agents/amazon-q-logo.png" alt="Amazon Q" style={{width: '60px', marginBottom: '0.5rem'}} />
-
-    AWS's AI development agent
+  <Card title="Gemini CLI" icon="sparkles" href="/agent-client/reference/gemini-reference">
+    Google's Gemini models via CLI
   </Card>
-  <Card
-    title="Amp Agent SDK"
-    icon="wand-magic"
-    href="https://spring-ai-community.github.io/agent-client/api/amp-cli-sdk.html"
-  >
-    <img src="/images/agents/amp-logo.png" alt="Amp" style={{width: '60px', marginBottom: '0.5rem'}} />
-
-    Amp AI agent platform
+  <Card title="Amazon Q" icon="cloud">
+    AWS developer assistant (beta)
   </Card>
-  <Card
-    title="Codex Agent SDK"
-    icon="code"
-    href="https://spring-ai-community.github.io/agent-client/api/codex-cli-sdk.html"
-  >
-    <img src="/images/agents/codex-logo.png" alt="Codex" style={{width: '60px', marginBottom: '0.5rem'}} />
-
-    OpenAI's Codex agent
+  <Card title="Amp" icon="wand-magic">
+    Sourcegraph's AI coding assistant (beta)
   </Card>
-  <Card
-    title="Custom Agent SDK"
-    icon="puzzle-piece"
-    href="https://spring-ai-community.github.io/agent-client/api/agentclient.html"
-  >
-    Bring your own agent
+  <Card title="Custom" icon="puzzle-piece">
+    Implement `AgentModel` for any CLI agent
+  </Card>
+</CardGroup>
+
+## Documentation
+
+<CardGroup cols={2}>
+  <Card title="Getting Started" icon="rocket" href="/agent-client/howto/getting-started">
+    Plain Java quick start — create your first agent task
+  </Card>
+  <Card title="Tutorial" icon="graduation-cap" href="/agent-client/tutorial/index">
+    Step-by-step lessons from first task to multi-provider
+  </Card>
+  <Card title="Reference" icon="book" href="/agent-client/reference/portable-options">
+    Configuration options, precedence rules, mode system
+  </Card>
+  <Card title="Switching Providers" icon="arrows-rotate" href="/agent-client/howto/switching-providers">
+    Run the same task with different providers using Maven profiles
   </Card>
 </CardGroup>
 
 ## Key Features
 
 <CardGroup cols={2}>
-  <Card
-    title="Spring Boot Auto-Configuration"
-    icon="leaf"
-    href="https://spring-ai-community.github.io/agent-client/getting-started/autoconfiguration.html"
-  >
-    Automatic agent discovery and configuration with Spring Boot starters
+  <Card title="Portable API" icon="plug">
+    `AgentClient.create(model)` works with any provider. Switch by swapping the model.
   </Card>
-  <Card
-    title="Secure Sandbox Isolation"
-    icon="shield"
-    href="/projects/incubating/agent-sandbox"
-  >
-    Docker container isolation with local fallback for safe agent execution
+  <Card title="LOOSE/STRICT Modes" icon="sliders" href="/agent-client/explanation/defaults-philosophy">
+    Control default permissiveness. LOOSE works anywhere, STRICT requires opt-in.
   </Card>
-  <Card
-    title="Unified AgentClient API"
-    icon="code"
-    href="https://spring-ai-community.github.io/agent-client/api/agentclient.html"
-  >
-    Consistent interface across all agent providers
+  <Card title="Agent Sessions" icon="comments" href="/agent-client/reference/sessions">
+    Persistent multi-turn conversations with session lifecycle management.
   </Card>
-  <Card
-    title="Portable MCP Servers"
-    icon="plug"
-    href="#portable-mcp-servers"
-  >
-    Define MCP servers once, run on any agent provider
+  <Card title="Portable MCP Servers" icon="server">
+    Define MCP servers once, run on any provider. Client resolves, model translates.
   </Card>
-  <Card
-    title="CLI Discovery"
-    icon="magnifying-glass"
-    href="https://spring-ai-community.github.io/agent-client/concepts/cli-agents.html"
-  >
-    Automatic detection of installed CLI tools
+  <Card title="Agent Advisors" icon="layer-group">
+    Interception points for context engineering, evaluation, security, and observability.
   </Card>
-  <Card
-    title="Agent Sessions"
-    icon="comments"
-    href="/agent-client/sessions"
-  >
-    Persistent multi-turn conversations with session lifecycle management
+  <Card title="Spring Boot Starters" icon="leaf">
+    Optional auto-configuration with `agent-starter-claude`, `agent-starter-codex`, etc.
   </Card>
 </CardGroup>
 
-## Portable MCP Servers
-
-MCP (Model Context Protocol) server definitions that work across all supported agent providers. Define MCP servers once in a portable format; Agent Client translates them to each provider's native configuration at execution time.
-
-**How it works**: The client resolves server names from a catalog of portable definitions. The model layer translates each definition to the provider's native format — Claude gets a temp JSON config file via `--mcp-config`, Gemini gets `.gemini/settings.json` with `--allowed-mcp-server-names`. Your application code stays the same regardless of which agent runs the task.
-
-Three transport types are supported: `stdio` (subprocess), `sse` (Server-Sent Events), and `http`.
-
-<Note>
-Available since version 0.10.0. Currently supported by the **Claude** and **Gemini** agent models.
-</Note>
-
-### Defining a Catalog
-
-<Tabs>
-  <Tab title="JSON File">
-    Create an `mcp-servers.json` file:
-
-    ```json
-    {
-      "mcpServers": {
-        "brave-search": {
-          "type": "stdio",
-          "command": "npx",
-          "args": ["-y", "@modelcontextprotocol/server-brave-search"],
-          "env": { "BRAVE_API_KEY": "${BRAVE_API_KEY}" }
-        },
-        "weather": {
-          "type": "sse",
-          "url": "http://localhost:8080/sse"
-        }
-      }
-    }
-    ```
-
-    ```java
-    McpServerCatalog catalog = McpServerCatalog.fromJson(Path.of("mcp-servers.json"));
-    ```
-
-    Environment variable placeholders (`${VAR_NAME}`) are resolved from `System.getenv()` at load time. You can also point `fromJson` at a directory — all `*.json` files are parsed and merged into a single catalog.
-  </Tab>
-  <Tab title="Programmatic">
-    Build a catalog using the builder API:
-
-    ```java
-    McpServerCatalog catalog = McpServerCatalog.builder()
-        .add("brave-search", new McpServerDefinition.StdioDefinition(
-            "npx",
-            List.of("-y", "@modelcontextprotocol/server-brave-search"),
-            Map.of("BRAVE_API_KEY", System.getenv("BRAVE_API_KEY"))))
-        .add("weather", new McpServerDefinition.SseDefinition(
-            "http://localhost:8080/sse"))
-        .build();
-    ```
-  </Tab>
-</Tabs>
-
-### Using MCP Servers with AgentClient
-
-Set default servers on the builder, override per-request, or combine both:
-
-```java
-AgentClient client = AgentClient.builder(agentModel)
-    .mcpServerCatalog(catalog)
-    .defaultMcpServers("weather")        // Applied to every request
-    .build();
-
-// Uses the default "weather" server
-client.goal("What is the forecast in Portland?").run();
-
-// Override: use "brave-search" instead for this request
-client.goal("Research recent Spring AI releases")
-    .mcpServers("brave-search")
-    .run();
-
-// Multiple servers in a single request
-client.goal("Find weather data and summarize search results")
-    .mcpServers("weather", "brave-search")
-    .run();
-```
-
-### Provider Translation
-
-The same catalog produces the correct native configuration for each provider. No code changes needed when switching agents.
-
-| Provider | Native mechanism | What Agent Client generates |
-|----------|------------------|-----------------------------|
-| Claude   | `--mcp-config <path>` | Temporary JSON config file (cleaned up after) |
-| Gemini   | `.gemini/settings.json` | Settings file in working directory (cleaned up after) |
-
-### Limitations
-
-- **In-process MCP servers** (live SDK server instances) cannot be expressed portably. Use provider-specific options for those.
-- **Unresolved environment variables** in JSON catalogs are replaced with empty strings, not left as placeholders.
-
-## Agent Roadmap
-
-<AccordionGroup>
-  <Accordion title="Currently Supported">
-    - **Claude Code** - Anthropic's autonomous coding assistant
-    - **Gemini** - Google's AI development platform
-    - **Amazon Q** - AWS's enterprise AI assistant
-    - **Amp** - AI agent platform
-    - **Codex** - OpenAI's code generation model
-  </Accordion>
-
-  <Accordion title="Coming Soon">
-    - **[Goose](https://github.com/square/goose)** - Square's AI agent framework
-    - **[Aider](https://aider.chat/)** - AI pair programming in your terminal ([GitHub](https://github.com/paul-gauthier/aider))
-    - **[OpenHands](https://www.all-hands.dev/)** - Open-source AI software engineer ([GitHub](https://github.com/All-Hands-AI/OpenHands))
-    - **[GitHub Copilot CLI](https://github.com/features/copilot/cli)** - GitHub's command-line AI assistant
-  </Accordion>
-</AccordionGroup>
-
-## Highlighted Achievement
-
-### Code Coverage Agent
-
-An autonomous agent that increased test coverage from **0% to 71.4%** on Spring's [gs-rest-service](https://spring.io/guides/gs/rest-service) tutorial.
-
-<Check>
-**Key Finding**: Both Claude and Gemini achieved the same coverage percentage, but **only Claude followed all Spring WebMVC best practices** (@WebMvcTest, jsonPath(), BDD naming).
-</Check>
-
-> Model quality matters: Same coverage, different code quality. Claude generated production-ready tests while Gemini used slower patterns (@SpringBootTest).
-
-<Note>
-**Learn More**: See the [Code Coverage Agent Guide](https://spring-ai-community.github.io/agent-client/getting-started/code-coverage-agent.html) for detailed implementation and results.
-</Note>
-
 ## Quick Start
-
-### Try with JBang (Zero Setup)
-
-The fastest way to try Agent Client - no cloning, no building:
-
-```bash
-# One-time setup: Add the catalog
-jbang catalog add --name=springai \
-  https://raw.githubusercontent.com/spring-ai-community/agent-client/main/jbang-catalog.json
-
-# Static content example
-jbang agents@springai hello-world \
-  path=greeting.txt \
-  content="Hello Agent Client!"
-
-# AI-powered examples (requires API keys)
-export ANTHROPIC_API_KEY="your-key-here"
-
-jbang agents@springai hello-world-agent-ai \
-  path=ai-greeting.txt \
-  content="a creative message about AI agents" \
-  provider=claude
-```
-
-### Maven Dependencies
 
 ```xml
 <dependency>
     <groupId>org.springaicommunity.agents</groupId>
-    <artifactId>spring-ai-starter-agent</artifactId>
-    <version>0.10.0</version>
+    <artifactId>agent-claude</artifactId>
+    <version>0.15.0</version>
 </dependency>
 ```
 
-### Basic Usage
+```java
+ClaudeAgentModel model = ClaudeAgentModel.builder()
+    .defaultOptions(ClaudeAgentOptions.builder()
+        .model("claude-sonnet-4-5")
+        .yolo(true)
+        .build())
+    .build();
+
+AgentClient client = AgentClient.create(model);
+AgentClientResponse response = client.run("Fix the failing test in UserServiceTest");
+```
+
+See the [Getting Started](/agent-client/howto/getting-started) guide for all three providers and the Spring Boot path.
+
+## Portable MCP Servers
+
+Define MCP servers once in a portable format. Agent Client translates to each provider's native configuration at execution time.
 
 ```java
-@Autowired
-private AgentClient agentClient;
+McpServerCatalog catalog = McpServerCatalog.fromJson(Path.of("mcp-servers.json"));
 
-// Simple goal execution
-String result = agentClient.run("Fix the failing test in UserServiceTest");
+AgentClient client = AgentClient.builder(model)
+    .mcpServerCatalog(catalog)
+    .defaultMcpServers("weather")
+    .build();
 
-// Advanced goal configuration
-AgentClientResponse response = agentClient
-    .goal("Generate comprehensive API documentation")
-    .workingDirectory(projectRoot)
+// Per-request MCP server selection
+client.goal("Research recent Spring AI releases")
+    .mcpServers("brave-search")
     .run();
 ```
 
-## Complete Architecture
-
-The complete Agent Client architecture showing all five core concepts working together:
-
-<img src="/images/projects/spring-ai-agents-complete-architecture.png" alt="Agent Client Complete Architecture" />
-
-## Core Domain Model
-
-In Agent Client, we model agents around these components:
-
-<CardGroup cols={2}>
-  <Card
-    title="Goals"
-    icon="bullseye"
-    href="https://spring-ai-community.github.io/agent-client/getting-started/goals-and-workspaces.html"
-  >
-    Clear objectives that guide agent execution
-  </Card>
-  <Card
-    title="Tools"
-    icon="wrench"
-    href="https://spring-ai-community.github.io/agent-client/concepts/cli-agents.html"
-  >
-    Actions the agent can take (call APIs, run commands, read files)
-  </Card>
-  <Card
-    title="Context"
-    icon="database"
-    href="https://spring-ai-community.github.io/agent-client/api/context-engineering.html"
-  >
-    Information the agent needs to make decisions
-  </Card>
-  <Card
-    title="Judges"
-    icon="gavel"
-    href="/projects/incubating/agent-judge"
-  >
-    Verification that the goal was achieved
-  </Card>
-</CardGroup>
-
-**Example:**
-
-```java
-CoverageJudge judge = new CoverageJudge(80.0);
-
-AgentClientResponse response = agentClient
-    .goal("Increase JaCoCo test coverage to 80%")
-    .workingDirectory(projectRoot)
-    .advisors(JudgeAdvisor.builder().judge(judge).build())
-    .run();
-```
-
-**Sandboxes** provide isolated execution environments (Docker, local processes, or cloud microVMs) for safe agent operations. **Judges** verify that goals were achieved - from simple file checks to LLM-powered validation.
-
-Learn more: [Agent Sandbox](/projects/incubating/agent-sandbox) • [Agent Judge](/projects/incubating/agent-judge)
+| Provider | Native mechanism |
+|----------|------------------|
+| Claude | `--mcp-config <path>` — temporary JSON config file |
+| Gemini | `.gemini/settings.json` — settings file in working directory |
 
 ## Agent Advisors
 
-Agent Client implements the same advisor pattern as Spring AI's ChatClient:
+The same advisor pattern as Spring AI's ChatClient — powerful interception for context engineering, evaluation, and security:
 
 ```java
-public class WorkspaceContextAdvisor implements AgentCallAdvisor {
-    @Override
-    public AgentClientResponse adviseCall(AgentClientRequest request,
-                                          AgentCallAdvisorChain chain) {
-        // Inject context before execution
-        String workspaceInfo = analyzeWorkspace(request.workingDirectory());
-        request.context().put("workspace_info", workspaceInfo);
-
-        // Execute agent
-        AgentClientResponse response = chain.nextCall(request);
-
-        // Add post-execution metrics
-        response.context().put("files_modified", countModifiedFiles());
-        return response;
-    }
-}
+AgentClient client = AgentClient.builder(model)
+    .defaultAdvisor(new WorkspaceContextAdvisor())
+    .defaultAdvisor(JudgeAdvisor.builder().judge(coverageJudge).build())
+    .build();
 ```
-
-**Common Use Cases:**
-- Context Engineering (git cloning, dependency sync)
-- Evaluation/Judges (test running, file verification)
-- Security (goal validation, operation blocking)
-- Observability (metrics, logging, performance)
 
 ## Related Projects
 
-These standalone libraries power Agent Client's evaluation and isolation capabilities:
-
 <CardGroup cols={2}>
-  <Card
-    title="Agent Judge"
-    icon="gavel"
-    href="/projects/incubating/agent-judge"
-  >
-    Standalone evaluation framework - Judge, Jury, and Score APIs
+  <Card title="Agent Judge" icon="gavel" href="/projects/incubating/agent-judge">
+    Standalone evaluation framework — Judge, Jury, and Score APIs
   </Card>
-  <Card
-    title="Agent Sandbox"
-    icon="box"
-    href="/projects/incubating/agent-sandbox"
-  >
-    Isolated execution API - Local, Docker, and E2B backends
+  <Card title="Agent Sandbox" icon="box" href="/projects/incubating/agent-sandbox">
+    Isolated execution — Local, Docker, and E2B backends
   </Card>
-</CardGroup>
-
-## Resources
-
-<CardGroup cols={2}>
-  <Card
-    title="Official Documentation"
-    icon="book"
-    href="https://spring-ai-community.github.io/agent-client/"
-  >
-    Complete documentation and guides
+  <Card title="Claude Agent SDK" icon="robot" href="/claude-agent-sdk/index">
+    Low-level Java SDK for Claude Code CLI
   </Card>
-  <Card
-    title="GitHub Repository"
-    icon="github"
-    href="https://github.com/spring-ai-community/agent-client"
-  >
-    View source code and contribute
-  </Card>
-  <Card
-    title="Getting Started"
-    icon="rocket"
-    href="https://spring-ai-community.github.io/agent-client/getting-started.html"
-  >
-    Quick start guide
-  </Card>
-  <Card
-    title="API Reference"
-    icon="code"
-    href="https://spring-ai-community.github.io/agent-client/api/agentclient.html"
-  >
-    API documentation
+  <Card title="Agent Bench" icon="chart-bar" href="/projects/incubating/agent-bench">
+    Benchmarking framework for agent evaluation
   </Card>
 </CardGroup>
 
 ## License
 
-Agent Client is Open Source software released under the [Apache 2.0 license](https://github.com/spring-ai-community/agent-client/blob/main/LICENSE).
+Apache 2.0 — [View on GitHub](https://github.com/spring-ai-community/agent-client/blob/main/LICENSE)
