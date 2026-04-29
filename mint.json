@@ -192,7 +192,16 @@
               "pages": [
                 "projects/incubating/agent-client",
                 "agent-client/defaults-philosophy",
-                "agent-client/sessions"
+                "agent-client/sessions",
+                {
+                  "group": "Reference",
+                  "pages": [
+                    "agent-client/portable-options",
+                    "agent-client/claude-reference",
+                    "agent-client/codex-reference",
+                    "agent-client/gemini-reference"
+                  ]
+                }
               ]
             },
             "projects/incubating/agent-judge",
