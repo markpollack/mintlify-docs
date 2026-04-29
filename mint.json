@@ -191,31 +191,36 @@
               "group": "Agent Client",
               "pages": [
                 "projects/incubating/agent-client",
-                "agent-client/getting-started",
-                "agent-client/defaults-philosophy",
-                "agent-client/sessions",
-                {
-                  "group": "Reference",
-                  "pages": [
-                    "agent-client/portable-options",
-                    "agent-client/claude-reference",
-                    "agent-client/codex-reference",
-                    "agent-client/gemini-reference"
-                  ]
-                },
-                {
-                  "group": "How-to",
-                  "pages": [
-                    "agent-client/switching-providers",
-                    "agent-client/structured-output"
-                  ]
-                },
                 {
                   "group": "Tutorial",
                   "pages": [
                     "agent-client/tutorial/index",
                     "agent-client/tutorial/01-first-task",
                     "agent-client/tutorial/02-multi-provider"
+                  ]
+                },
+                {
+                  "group": "How-to",
+                  "pages": [
+                    "agent-client/getting-started",
+                    "agent-client/switching-providers",
+                    "agent-client/structured-output"
+                  ]
+                },
+                {
+                  "group": "Reference",
+                  "pages": [
+                    "agent-client/portable-options",
+                    "agent-client/claude-reference",
+                    "agent-client/codex-reference",
+                    "agent-client/gemini-reference",
+                    "agent-client/sessions"
+                  ]
+                },
+                {
+                  "group": "Explanation",
+                  "pages": [
+                    "agent-client/defaults-philosophy"
                   ]
                 }
               ]
