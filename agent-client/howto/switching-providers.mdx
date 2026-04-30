@@ -59,32 +59,26 @@ Create profile-specific YAML files alongside your main `application.yml`:
 <Tabs>
   <Tab title="application-claude.yml">
     ```yaml
-    spring:
-      ai:
-        agents:
-          claude-code:
-            model: claude-sonnet-4-5
-            yolo: true
+    agent-client:
+      claude:
+        model: claude-sonnet-4-5
+        yolo: true
     ```
   </Tab>
   <Tab title="application-codex.yml">
     ```yaml
-    spring:
-      ai:
-        agents:
-          codex:
-            model: gpt-5-codex
-            full-auto: true
+    agent-client:
+      codex:
+        model: gpt-5-codex
+        full-auto: true
     ```
   </Tab>
   <Tab title="application-gemini.yml">
     ```yaml
-    spring:
-      ai:
-        agents:
-          gemini:
-            model: gemini-2.5-flash
-            yolo: true
+    agent-client:
+      gemini:
+        model: gemini-2.5-flash
+        yolo: true
     ```
   </Tab>
 </Tabs>

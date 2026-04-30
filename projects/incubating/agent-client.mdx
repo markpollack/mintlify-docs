@@ -11,14 +11,23 @@ description: "Portable Java API for autonomous CLI agents — Claude Code, Codex
 [GitHub](https://github.com/spring-ai-community/agent-client) • [Maven Central](https://central.sonatype.com/search?q=g:org.springaicommunity.agents) • [Tutorial](https://github.com/spring-ai-community/agent-client-tutorial)
 
 <Note>
-**Version 0.15.0** — Available on [Maven Central](https://central.sonatype.com/search?q=g:org.springaicommunity.agents)
+**Version 0.16.0** — Available on [Maven Central](https://central.sonatype.com/search?q=g:org.springaicommunity.agents)
 </Note>
 
-## What's New in 0.15.0
+## What's New in 0.16.0
 
-- **AgentClientMode** (LOOSE/STRICT) — portable enum controlling default permissiveness. Codex now works in non-git directories out of the box.
-- **Provider Parity TCK** — `@ProviderCapability` annotation with JUnit Assumptions for cross-provider testing.
-- **Reference documentation** — complete configuration reference for all 30+ properties across Claude, Codex, and Gemini.
+- **Framework-independent core** — `agent-client-core` has zero Spring Boot dependencies. Use from plain Java, Quarkus, or Micronaut.
+- **`AgentApi` replaces `AgentModel`** — new name reflects that implementations wrap CLI runtimes, not AI models. `AgentModel` is deprecated with a shim.
+- **New property prefix `agent-client.*`** — replaces `spring.ai.agents.*` to properly distance from Spring AI namespace. Example: `agent-client.claude.model` instead of `spring.ai.agents.claude-code.model`.
+- **LOOSE mode sandbox bypass** — Codex LOOSE now derives `dangerouslyBypassSandbox=true`, fixing bwrap sandbox failures.
+- **Codex model default** — updated to `gpt-5.4-mini` (replaces retired `gpt-5-codex`).
+- **Gemini working directory fix** — request working directory now properly propagated to CLI process.
+
+### Previous (0.15.0)
+
+- **AgentClientMode** (LOOSE/STRICT) — portable enum controlling default permissiveness.
+- **Provider Parity TCK** — `@ProviderCapability` annotation with JUnit Assumptions.
+- **Reference documentation** — complete configuration reference for all providers.
 - **Tutorial repository** — progressive examples at [agent-client-tutorial](https://github.com/spring-ai-community/agent-client-tutorial).
 
 ## Overview

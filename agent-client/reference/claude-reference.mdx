@@ -6,21 +6,19 @@ sidebarTitle: "Claude Reference"
 
 ## Overview
 
-The Claude agent wraps the [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code) via `ClaudeAgentModel`. Configure it through Spring properties under `spring.ai.agents.claude-code.*`.
+The Claude agent wraps the [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code) via `ClaudeAgentApi`. Configure it through Spring properties under `agent-client.claude.*`.
 
 ```yaml
-spring:
-  ai:
-    agents:
-      claude-code:
-        model: claude-sonnet-4-5
-        timeout: PT5M
-        yolo: true
+agent-client:
+  claude:
+    model: claude-sonnet-4-5
+    timeout: PT5M
+    yolo: true
 ```
 
 ## Configuration Properties
 
-Prefix: `spring.ai.agents.claude-code`
+Prefix: `agent-client.claude`
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
@@ -64,12 +62,10 @@ The `permission-mode` property overrides `yolo` when set. Available modes:
 | `default` | Use Claude Code's default permission behavior |
 
 ```yaml
-spring:
-  ai:
-    agents:
-      claude-code:
-        permission-mode: bypassPermissions
-        # yolo is ignored when permission-mode is set
+agent-client:
+  claude:
+    permission-mode: bypassPermissions
+    # yolo is ignored when permission-mode is set
 ```
 
 ## Tool Filtering
@@ -77,16 +73,14 @@ spring:
 Control which tools Claude can use:
 
 ```yaml
-spring:
-  ai:
-    agents:
-      claude-code:
-        allowed-tools:
-          - Read
-          - Write
-          - Bash
-        disallowed-tools:
-          - WebSearch
+agent-client:
+  claude:
+    allowed-tools:
+      - Read
+      - Write
+      - Bash
+    disallowed-tools:
+      - WebSearch
 ```
 
 <Warning>
@@ -98,13 +92,11 @@ spring:
 Limit agent execution costs and turns:
 
 ```yaml
-spring:
-  ai:
-    agents:
-      claude-code:
-        max-turns: 10           # Stop after 10 agentic turns
-        max-budget-usd: 0.50    # Stop after $0.50 spent
-        max-tokens: 4096        # Limit response tokens
+agent-client:
+  claude:
+    max-turns: 10           # Stop after 10 agentic turns
+    max-budget-usd: 0.50    # Stop after $0.50 spent
+    max-tokens: 4096        # Limit response tokens
 ```
 
 ## Structured Output
@@ -112,19 +104,17 @@ spring:
 Request structured JSON output using a JSON schema:
 
 ```yaml
-spring:
-  ai:
-    agents:
-      claude-code:
-        json-schema:
-          type: object
-          properties:
-            summary:
-              type: string
-            files_changed:
-              type: array
-              items:
-                type: string
+agent-client:
+  claude:
+    json-schema:
+      type: object
+      properties:
+        summary:
+          type: string
+        files_changed:
+          type: array
+          items:
+            type: string
 ```
 
 ## Authentication

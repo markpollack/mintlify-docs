@@ -23,7 +23,7 @@ Pick your provider. You need the agent model module for your provider:
     <dependency>
         <groupId>org.springaicommunity.agents</groupId>
         <artifactId>agent-claude</artifactId>
-        <version>0.13.0</version>
+        <version>0.16.0</version>
     </dependency>
     ```
   </Tab>
@@ -32,7 +32,7 @@ Pick your provider. You need the agent model module for your provider:
     <dependency>
         <groupId>org.springaicommunity.agents</groupId>
         <artifactId>agent-codex</artifactId>
-        <version>0.13.0</version>
+        <version>0.16.0</version>
     </dependency>
     ```
   </Tab>
@@ -41,7 +41,7 @@ Pick your provider. You need the agent model module for your provider:
     <dependency>
         <groupId>org.springaicommunity.agents</groupId>
         <artifactId>agent-gemini</artifactId>
-        <version>0.13.0</version>
+        <version>0.16.0</version>
     </dependency>
     ```
   </Tab>
@@ -150,13 +150,13 @@ The agent will create `hello.txt` in your working directory.
 
 ## With Spring Boot
 
-If you're building a Spring Boot application, use the starter dependencies instead. They auto-configure the `AgentModel` and provide an injectable `AgentClient.Builder`:
+If you're building a Spring Boot application, use the starter dependencies instead. They auto-configure the `AgentApi` and provide an injectable `AgentClient.Builder`:
 
 ```xml
 <dependency>
     <groupId>org.springaicommunity.agents</groupId>
     <artifactId>agent-starter-claude</artifactId>
-    <version>0.13.0</version>
+    <version>0.16.0</version>
 </dependency>
 ```
 
@@ -182,12 +182,10 @@ public class MyAgentRunner implements CommandLineRunner {
 Configuration goes in `application.yml`:
 
 ```yaml
-spring:
-  ai:
-    agents:
-      claude-code:
-        model: claude-sonnet-4-5
-        yolo: true
+agent-client:
+  claude:
+    model: claude-sonnet-4-5
+    yolo: true
 ```
 
 ## Next Steps

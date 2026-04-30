@@ -57,11 +57,9 @@ public enum AgentClientMode {
 Set the mode via Spring properties:
 
 ```yaml
-spring:
-  ai:
-    agents:
-      codex:
-        mode: strict  # or loose (default)
+agent-client:
+  codex:
+    mode: strict  # or loose (default)
 ```
 
 ## Precedence Rules
@@ -79,12 +77,10 @@ Options are resolved in this order (first wins):
 Explicit property overrides **always** take precedence over mode-derived defaults:
 
 ```yaml
-spring:
-  ai:
-    agents:
-      codex:
-        mode: strict
-        skip-git-check: true  # This wins — overrides STRICT's default
+agent-client:
+  codex:
+    mode: strict
+    skip-git-check: true  # This wins — overrides STRICT's default
 ```
 
 In this configuration, Codex gets STRICT defaults for everything **except** the git check, which the user explicitly enabled. This is intentional — if you set a property explicitly, you made a conscious choice.
@@ -107,19 +103,15 @@ Before 0.14.0, Codex defaulted to `skipGitCheck=false`. If you relied on this:
 
 ```yaml
 # Restore pre-0.14.0 Codex behavior
-spring:
-  ai:
-    agents:
-      codex:
-        mode: strict
+agent-client:
+  codex:
+    mode: strict
 ```
 
 Or override the specific property:
 
 ```yaml
-spring:
-  ai:
-    agents:
-      codex:
-        skip-git-check: false
+agent-client:
+  codex:
+    skip-git-check: false
 ```

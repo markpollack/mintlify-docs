@@ -6,21 +6,19 @@ sidebarTitle: "Gemini Reference"
 
 ## Overview
 
-The Gemini agent wraps the [Gemini CLI](https://github.com/google-gemini/gemini-cli) via `GeminiAgentModel`. Configure it through Spring properties under `spring.ai.agents.gemini.*`.
+The Gemini agent wraps the [Gemini CLI](https://github.com/google-gemini/gemini-cli) via `GeminiAgentApi`. Configure it through Spring properties under `agent-client.gemini.*`.
 
 ```yaml
-spring:
-  ai:
-    agents:
-      gemini:
-        model: gemini-2.5-flash
-        timeout: PT5M
-        yolo: true
+agent-client:
+  gemini:
+    model: gemini-2.5-flash
+    timeout: PT5M
+    yolo: true
 ```
 
 ## Configuration Properties
 
-Prefix: `spring.ai.agents.gemini`
+Prefix: `agent-client.gemini`
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
@@ -36,11 +34,9 @@ Prefix: `spring.ai.agents.gemini`
 When `yolo=true` (default), Gemini runs autonomously without permission prompts:
 
 ```yaml
-spring:
-  ai:
-    agents:
-      gemini:
-        yolo: true    # Default — no permission prompts
+agent-client:
+  gemini:
+    yolo: true    # Default — no permission prompts
 ```
 
 Set `yolo: false` if you want Gemini to ask for confirmation before executing commands.
@@ -50,11 +46,9 @@ Set `yolo: false` if you want Gemini to ask for confirmation before executing co
 Control response randomness with the `temperature` property:
 
 ```yaml
-spring:
-  ai:
-    agents:
-      gemini:
-        temperature: 0.2    # More deterministic
+agent-client:
+  gemini:
+    temperature: 0.2    # More deterministic
 ```
 
 | Value | Behavior |

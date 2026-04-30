@@ -6,25 +6,23 @@ sidebarTitle: "Codex Reference"
 
 ## Overview
 
-The Codex agent wraps the [OpenAI Codex CLI](https://github.com/openai/codex) via `CodexAgentModel`. Configure it through Spring properties under `spring.ai.agents.codex.*`.
+The Codex agent wraps the [OpenAI Codex CLI](https://github.com/openai/codex) via `CodexAgentApi`. Configure it through Spring properties under `agent-client.codex.*`.
 
 ```yaml
-spring:
-  ai:
-    agents:
-      codex:
-        model: gpt-5-codex
-        timeout: PT5M
-        full-auto: true
+agent-client:
+  codex:
+    model: gpt-5-codex
+    timeout: PT5M
+    full-auto: true
 ```
 
 ## Configuration Properties
 
-Prefix: `spring.ai.agents.codex`
+Prefix: `agent-client.codex`
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
-| `mode` | `AgentClientMode` | — | Controls default permissiveness. Inherits from `spring.ai.agents.mode` if not set (default: `LOOSE`). |
+| `mode` | `AgentClientMode` | — | Controls default permissiveness. Inherits from `agent-client.mode` if not set (default: `LOOSE`). |
 | `model` | `String` | `gpt-5-codex` | Model to use for Codex execution |
 | `timeout` | `Duration` | `5m` | Timeout for agent task execution |
 | `full-auto` | `boolean` | `true` | Enable full-auto mode (workspace-write sandbox + never approval) |
@@ -67,11 +65,9 @@ When `full-auto=true` (default), Codex runs with:
 - **Never asks for approval** — autonomous execution
 
 ```yaml
-spring:
-  ai:
-    agents:
-      codex:
-        full-auto: true   # Default — autonomous execution
+agent-client:
+  codex:
+    full-auto: true   # Default — autonomous execution
 ```
 
 <Note>

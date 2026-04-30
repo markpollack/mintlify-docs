@@ -15,26 +15,24 @@ Pass a JSON schema to the agent via Spring properties or the fluent API. The age
 ### Via Spring Properties
 
 ```yaml
-spring:
-  ai:
-    agents:
-      claude-code:
-        json-schema:
-          type: object
-          properties:
-            summary:
-              type: string
-              description: "A brief summary of what was done"
-            files_changed:
-              type: array
-              items:
-                type: string
-              description: "List of files that were created or modified"
-            success:
-              type: boolean
-          required:
-            - summary
-            - success
+agent-client:
+  claude:
+    json-schema:
+      type: object
+      properties:
+        summary:
+          type: string
+          description: "A brief summary of what was done"
+        files_changed:
+          type: array
+          items:
+            type: string
+          description: "List of files that were created or modified"
+        success:
+          type: boolean
+      required:
+        - summary
+        - success
 ```
 
 ### Via the Fluent API
