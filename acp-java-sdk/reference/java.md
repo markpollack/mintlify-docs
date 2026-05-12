@@ -33,7 +33,7 @@ Core SDK (client + sync/async agent APIs):
 <dependency>
     <groupId>com.agentclientprotocol</groupId>
     <artifactId>acp-core</artifactId>
-    <version>0.9.0-SNAPSHOT</version>
+    <version>0.11.0</version>
 </dependency>
 ```
 
@@ -43,7 +43,7 @@ Annotation-based agent support (includes `acp-core` transitively):
 <dependency>
     <groupId>com.agentclientprotocol</groupId>
     <artifactId>acp-agent-support</artifactId>
-    <version>0.9.0-SNAPSHOT</version>
+    <version>0.11.0</version>
 </dependency>
 ```
 
@@ -53,7 +53,7 @@ Test utilities:
 <dependency>
     <groupId>com.agentclientprotocol</groupId>
     <artifactId>acp-test</artifactId>
-    <version>0.9.0-SNAPSHOT</version>
+    <version>0.11.0</version>
     <scope>test</scope>
 </dependency>
 ```
@@ -64,40 +64,30 @@ WebSocket server transport for agents:
 <dependency>
     <groupId>com.agentclientprotocol</groupId>
     <artifactId>acp-websocket-jetty</artifactId>
-    <version>0.9.0-SNAPSHOT</version>
+    <version>0.11.0</version>
 </dependency>
 ```
 
 ### Gradle
 
-Add the snapshot repository:
-
 ```groovy
 // build.gradle
-repositories {
-    maven { url 'https://central.sonatype.com/repository/maven-snapshots/' }
-}
-
-implementation 'com.agentclientprotocol:acp-core:0.9.0-SNAPSHOT'
+implementation 'com.agentclientprotocol:acp-core:0.11.0'
 
 // Optional modules
-implementation 'com.agentclientprotocol:acp-agent-support:0.9.0-SNAPSHOT'
-implementation 'com.agentclientprotocol:acp-websocket-jetty:0.9.0-SNAPSHOT'
-testImplementation 'com.agentclientprotocol:acp-test:0.9.0-SNAPSHOT'
+implementation 'com.agentclientprotocol:acp-agent-support:0.11.0'
+implementation 'com.agentclientprotocol:acp-websocket-jetty:0.11.0'
+testImplementation 'com.agentclientprotocol:acp-test:0.11.0'
 ```
 
 ```kotlin
 // build.gradle.kts
-repositories {
-    maven { url = uri("https://central.sonatype.com/repository/maven-snapshots/") }
-}
-
-implementation("com.agentclientprotocol:acp-core:0.9.0-SNAPSHOT")
+implementation("com.agentclientprotocol:acp-core:0.11.0")
 
 // Optional modules
-implementation("com.agentclientprotocol:acp-agent-support:0.9.0-SNAPSHOT")
-implementation("com.agentclientprotocol:acp-websocket-jetty:0.9.0-SNAPSHOT")
-testImplementation("com.agentclientprotocol:acp-test:0.9.0-SNAPSHOT")
+implementation("com.agentclientprotocol:acp-agent-support:0.11.0")
+implementation("com.agentclientprotocol:acp-websocket-jetty:0.11.0")
+testImplementation("com.agentclientprotocol:acp-test:0.11.0")
 ```
 
 ---
