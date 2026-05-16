@@ -4,6 +4,10 @@ sidebarTitle: "Overview"
 description: "A progressive tutorial for learning the Claude Agent SDK Java."
 ---
 
+<Warning>
+This project has moved. Current docs: [lab.pollack.ai/projects/claude-agent-sdk](https://lab.pollack.ai/projects/claude-agent-sdk).
+</Warning>
+
 A progressive, hands-on tutorial. Each module takes 15-30 minutes and focuses on one concept.
 
 ## Prerequisites

@@ -43,77 +43,6 @@
       "pages": [
         "projects/index",
         {
-          "group": "Claude Agent SDK",
-          "pages": [
-            "claude-agent-sdk/index",
-            {
-              "group": "Reference",
-              "pages": [
-                "claude-agent-sdk/reference/java"
-              ]
-            },
-            {
-              "group": "Tutorial",
-              "pages": [
-                "claude-agent-sdk/tutorial/index",
-                {
-                  "group": "Part 1: Fundamentals",
-                  "pages": [
-                    "claude-agent-sdk/tutorial/01-hello-world",
-                    "claude-agent-sdk/tutorial/02-query-api",
-                    "claude-agent-sdk/tutorial/03-sync-client",
-                    "claude-agent-sdk/tutorial/04-async-client",
-                    "claude-agent-sdk/tutorial/05-message-types"
-                  ]
-                },
-                {
-                  "group": "Part 2: Configuration",
-                  "pages": [
-                    "claude-agent-sdk/tutorial/06-cli-options",
-                    "claude-agent-sdk/tutorial/07-tool-permissions",
-                    "claude-agent-sdk/tutorial/08-permission-modes",
-                    "claude-agent-sdk/tutorial/09-structured-outputs"
-                  ]
-                },
-                {
-                  "group": "Part 3: Sessions & State",
-                  "pages": [
-                    "claude-agent-sdk/tutorial/10-multi-turn",
-                    "claude-agent-sdk/tutorial/11-session-resume",
-                    "claude-agent-sdk/tutorial/12-session-fork",
-                    "claude-agent-sdk/tutorial/13-async-advanced"
-                  ]
-                },
-                {
-                  "group": "Part 4: Safety & Control",
-                  "pages": [
-                    "claude-agent-sdk/tutorial/14-permission-callbacks",
-                    "claude-agent-sdk/tutorial/15-hooks-pretooluse",
-                    "claude-agent-sdk/tutorial/16-hooks-posttooluse",
-                    "claude-agent-sdk/tutorial/17-interrupt-handling"
-                  ]
-                },
-                {
-                  "group": "Part 5: MCP Integration",
-                  "pages": [
-                    "claude-agent-sdk/tutorial/18-mcp-external",
-                    "claude-agent-sdk/tutorial/19-multiple-mcp-servers",
-                    "claude-agent-sdk/tutorial/20-mcp-with-hooks"
-                  ]
-                },
-                {
-                  "group": "Part 6: Multi-Agent",
-                  "pages": [
-                    "claude-agent-sdk/tutorial/21-subagents-intro",
-                    "claude-agent-sdk/tutorial/22-subagents-parallel",
-                    "claude-agent-sdk/tutorial/23-orchestrator-pattern"
-                  ]
-                }
-              ]
-            }
-          ]
-        },
-        {
           "group": "ACP",
           "pages": [
             "acp-java-sdk/index",
@@ -187,47 +116,6 @@
           "group": "Agentic",
           "pages": [
             "projects/incubating/spring-ai-agent-utils",
-            {
-              "group": "Agent Client",
-              "pages": [
-                "projects/incubating/agent-client",
-                {
-                  "group": "Tutorial",
-                  "pages": [
-                    "agent-client/tutorial/index",
-                    "agent-client/tutorial/01-first-task",
-                    "agent-client/tutorial/02-multi-provider"
-                  ]
-                },
-                {
-                  "group": "How-to",
-                  "pages": [
-                    "agent-client/howto/getting-started",
-                    "agent-client/howto/switching-providers",
-                    "agent-client/howto/structured-output"
-                  ]
-                },
-                {
-                  "group": "Reference",
-                  "pages": [
-                    "agent-client/reference/portable-options",
-                    "agent-client/reference/claude-reference",
-                    "agent-client/reference/codex-reference",
-                    "agent-client/reference/gemini-reference",
-                    "agent-client/reference/sessions"
-                  ]
-                },
-                {
-                  "group": "Explanation",
-                  "pages": [
-                    "agent-client/explanation/defaults-philosophy"
-                  ]
-                }
-              ]
-            },
-            "projects/incubating/agent-judge",
-            "projects/incubating/agent-sandbox",
-            "projects/incubating/agent-bench",
             "projects/incubating/github-collector",
             "projects/incubating/spring-ai-tool-search-tool"
           ]
@@ -250,10 +138,15 @@
           ]
         },
         {
-          "group": "Attic",
+          "group": "Moved Projects",
           "pages": [
             "projects/attic/moonshot",
-            "projects/attic/qianfan"
+            "projects/attic/qianfan",
+            "projects/incubating/agent-client",
+            "projects/incubating/agent-judge",
+            "projects/incubating/agent-sandbox",
+            "projects/incubating/agent-bench",
+            "claude-agent-sdk/index"
           ]
         }
       ]

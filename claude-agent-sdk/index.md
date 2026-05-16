@@ -4,6 +4,12 @@ sidebarTitle: "Overview"
 description: "A Java SDK for integrating with Claude Code CLI, enabling programmatic control of Claude as an AI coding agent."
 ---
 
+<Warning>
+This project has moved to [markpollack/claude-agent-sdk-java](https://github.com/markpollack/claude-agent-sdk-java).
+Current documentation is at [lab.pollack.ai/projects/claude-agent-sdk](https://lab.pollack.ai/projects/claude-agent-sdk).
+The content below may be outdated.
+</Warning>
+
 A Java SDK for integrating with Claude Code CLI, enabling programmatic control of Claude as an AI coding agent.
 
 ## Overview
