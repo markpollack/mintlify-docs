@@ -65,7 +65,12 @@
             "projects/incubating/agent-judge",
             "projects/incubating/agent-sandbox",
             "projects/incubating/agent-bench",
-            "claude-agent-sdk/index",
+            "claude-agent-sdk/index"
+          ]
+        },
+        {
+          "group": "Attic",
+          "pages": [
             "projects/attic/moonshot",
             "projects/attic/qianfan"
           ]
