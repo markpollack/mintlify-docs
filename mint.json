@@ -47,7 +47,6 @@
           "group": "Active Projects",
           "pages": [
             "projects/incubating/spring-ai-agent-utils",
-            "projects/incubating/github-collector",
             "projects/incubating/spring-ai-tool-search-tool",
             "projects/incubating/mcp-annotations",
             "projects/incubating/mcp-security",
@@ -60,6 +59,7 @@
         {
           "group": "Moved Projects",
           "pages": [
+            "projects/incubating/github-collector",
             "acp-java-sdk/index",
             "projects/incubating/agent-client",
             "projects/incubating/agent-judge",
