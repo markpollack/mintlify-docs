@@ -24,6 +24,7 @@ Prefix: `agent-client.codex`
 |----------|------|---------|-------------|
 | `mode` | `AgentClientMode` | — | Controls default permissiveness. Inherits from `agent-client.mode` if not set (default: `LOOSE`). |
 | `model` | `String` | `gpt-5-codex` | Model to use for Codex execution |
+| `reasoning-effort` | `String` | — | Model reasoning effort (`model_reasoning_effort` config override): `minimal`, `low`, `medium`, `high`, `xhigh`. Overrides the portable `effort` when both are set |
 | `timeout` | `Duration` | `5m` | Timeout for agent task execution |
 | `full-auto` | `boolean` | `true` | Enable full-auto mode (workspace-write sandbox + never approval) |
 | `skip-git-check` | `Boolean` | — | Skip git repository check. When not explicitly set, derived from mode (see below). |
