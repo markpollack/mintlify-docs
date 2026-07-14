@@ -57,22 +57,27 @@
           ]
         },
         {
-          "group": "Moved Projects",
+          "group": "Archive",
           "pages": [
-            "projects/incubating/github-collector",
-            "acp-java-sdk/index",
-            "projects/incubating/agent-client",
-            "projects/incubating/agent-judge",
-            "projects/incubating/agent-sandbox",
-            "projects/incubating/agent-bench",
-            "claude-agent-sdk/index"
-          ]
-        },
-        {
-          "group": "Attic",
-          "pages": [
-            "projects/attic/moonshot",
-            "projects/attic/qianfan"
+            {
+              "group": "Moved to markpollack",
+              "pages": [
+                "projects/incubating/github-collector",
+                "acp-java-sdk/index",
+                "projects/incubating/agent-client",
+                "projects/incubating/agent-judge",
+                "projects/incubating/agent-sandbox",
+                "projects/incubating/agent-bench",
+                "claude-agent-sdk/index"
+              ]
+            },
+            {
+              "group": "Retired",
+              "pages": [
+                "projects/attic/moonshot",
+                "projects/attic/qianfan"
+              ]
+            }
           ]
         }
       ]
@@ -81,12 +86,6 @@
       "group": "Get Involved",
       "pages": [
         "get-involved/index"
-      ]
-    },
-    {
-      "group": "Benchmarking",
-      "pages": [
-        "benchmarking/index"
       ]
     },
     {
